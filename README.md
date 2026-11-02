@@ -9,14 +9,15 @@
 ## 给 Codex
 
 1. 读 [`docs/CODEX_BRIEF.md`](docs/CODEX_BRIEF.md)
-2. 按刀序只做当前包：从 [`docs/packs/01-data-contract.md`](docs/packs/01-data-contract.md) 开始
-3. 不要扩多癌种 / Deauville·Lugano / 恶性判定 / 真实注册材料
+2. **Pack 01 数据契约已入库**（`schemas/v0/`）。请先按 [`docs/packs/01-data-contract.md`](docs/packs/01-data-contract.md) 的 checklist **校验/补洞**，不要另起一套字段
+3. 验过后等 Pack 02 BRIEF（导入+阅片壳+ROI）
+4. 不要扩多癌种 / Deauville·Lugano / 恶性判定 / 真实注册材料
 
 ## 状态
 
 | 包 | 内容 | 状态 |
 | --- | --- | --- |
-| 01 | 数据契约（Exam / Lesion / Measurement / proposed 状态机） | 待 Codex |
+| 01 | 数据契约（Exam / Lesion / Measurement / proposed 状态机） | **已推送·待 Codex 校验 + 人工验** |
 | 02 | 导入 + PET/CT 阅片壳 + 半自动 ROI | 未开 |
 | 03 | SUVmax + CT 最长径 + 可改留痕 | 未开 |
 | 04 | 先验配对 + 描述性报告草稿 + 质量门 | 未开 |
