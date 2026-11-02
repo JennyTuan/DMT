@@ -12,6 +12,7 @@
     "pet_series_ref",
     "ct_series_ref",
     "attenuation_corrected",
+    "prior_exam_id",
     "prototype_banner"
   ],
   "properties": {
@@ -31,7 +32,8 @@
       "const": "PET-CT"
     },
     "disease": {
-      "const": "lymphoma"
+      "const": "lymphoma",
+      "default": "lymphoma"
     },
     "pet_series_ref": {
       "type": "string"
@@ -54,6 +56,19 @@
     "is_synthetic": {
       "type": "boolean",
       "default": false
+    }
+  },
+  "$defs": {
+    "bundle": {
+      "title": "单次检查及所属病灶和量测",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exam", "lesions", "measurements"],
+      "properties": {
+        "exam": { "$ref": "#" },
+        "lesions": { "type": "array", "items": { "$ref": "lesion.schema.json" } },
+        "measurements": { "type": "array", "items": { "$ref": "measurement.schema.json" } }
+      }
     }
   }
 }

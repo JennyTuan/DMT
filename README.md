@@ -21,14 +21,18 @@ The name **DMT** must **not** be used to claim a multi-modality platform is alre
 | Doc | Purpose |
 | --- | --- |
 | [`docs/LOCK.md`](docs/LOCK.md) | Product lock: build / don’t build / bans |
-| [`docs/CODEX_BRIEF_PACK1.md`](docs/CODEX_BRIEF_PACK1.md) | **Pack1** Codex brief — data contracts + state machine |
+| [Pack 01 数据契约](docs/packs/01-data-contract.md) | 当前执行范围与验收清单 |
+| [`docs/CODEX_BRIEF_PACK1.md`](docs/CODEX_BRIEF_PACK1.md) | Supplementary Pack 01 notes |
 | [`docs/UI_DIRECTION.md`](docs/UI_DIRECTION.md) | UI direction for later packs (domestic clinical workstation density; no vendor clone) |
 
 ## Pack status
 
-- **Pack1 (current):** JSON data contracts, `ProposedState` machine, fixtures, unit tests — **no UI**
-- Later: ROI → SUVmax / longest diameter → prior linking → descriptive report draft → quality gates
+| 包 | 交付 | 状态 |
+| --- | --- | --- |
+| Pack 01 | [检查、病灶、量测、状态机及配对示例](schemas/v0/README.md) | 已提交待人工验 |
+
+Later: ROI → SUVmax / longest diameter → prior linking → descriptive report draft → quality gates
 
 ## For Codex
 
-Paste the prompt block at the bottom of `docs/CODEX_BRIEF_PACK1.md` into Codex on a machine with this repo cloned. Do not expand scope past Pack1.
+Use the prompt and acceptance checklist in [Pack 01](docs/packs/01-data-contract.md).

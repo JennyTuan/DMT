@@ -9,6 +9,7 @@
     "lesion_id",
     "suv_max",
     "longest_diameter_mm",
+    "roi_ref",
     "edited",
     "state",
     "audit"
@@ -47,10 +48,8 @@
       "$ref": "finding_state.schema.json#/$defs/status"
     },
     "audit": {
-      "type": "array",
-      "items": {
-        "$ref": "finding_state.schema.json#/$defs/audit_entry"
-      }
+      "$ref": "finding_state.schema.json#/$defs/history"
     }
-  }
+  },
+  "$ref": "finding_state.schema.json#/$defs/state_matches_history"
 }

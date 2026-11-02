@@ -8,7 +8,8 @@
     "lesion_id",
     "exam_id",
     "label",
-    "status"
+    "status",
+    "audit"
   ],
   "properties": {
     "lesion_id": {
@@ -23,6 +24,10 @@
     },
     "status": {
       "$ref": "finding_state.schema.json#/$defs/status"
+    },
+    "audit": {
+      "$ref": "finding_state.schema.json#/$defs/history"
     }
-  }
+  },
+  "$ref": "finding_state.schema.json#/$defs/state_matches_history"
 }

@@ -17,7 +17,16 @@
       "lesion_id": "les_demo_001_mediastinum_fu",
       "exam_id": "ex_lymphoma_demo_followup",
       "label": "纵隔淋巴结",
-      "status": "proposed"
+      "status": "proposed",
+      "audit": [
+        {
+          "at": "2026-04-10T10:00:00+08:00",
+          "actor": "system",
+          "from": "draft",
+          "to": "proposed",
+          "note": "示意病灶条目已提交"
+        }
+      ]
     }
   ],
   "measurements": [
