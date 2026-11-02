@@ -15,6 +15,10 @@
     "lesion_id": {
       "type": "string"
     },
+    "lesion_track_id": {
+      "type": ["string", "null"],
+      "description": "跨检查追踪同一病灶的稳定标识"
+    },
     "exam_id": {
       "type": "string"
     },

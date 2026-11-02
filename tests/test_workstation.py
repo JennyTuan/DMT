@@ -48,8 +48,12 @@ class WorkstationTest(unittest.TestCase):
             window.show()
             self.assertIn("淋巴瘤 PET 随访原型", window.windowTitle())
             self.assertEqual(window.banner.text(), "原型·不可用于临床诊疗决策")
-            QTest.mouseClick(window.demo_button, Qt.MouseButton.LeftButton)
-            self.wait_for_import(window)
+            # Start with a standalone, unannotated quantitative study for ROI creation.
+            source = root / "source"
+            make_demo(source, quantitative=True)
+            with patch.object(QFileDialog, "getExistingDirectory", return_value=str(source)):
+                QTest.mouseClick(window.import_button, Qt.MouseButton.LeftButton)
+                self.wait_for_import(window)
             self.assertTrue(window.synthetic_badge.isVisible())
             self.assertTrue(window.store.bundle["exam"]["is_synthetic"])
             self.assertEqual(window.table.rowCount(), 0)
@@ -174,8 +178,7 @@ class WorkstationTest(unittest.TestCase):
             window.show()
             window.demo_button.click()
             self.wait_for_import(window)
-            window.pet.pixel_clicked.emit(104, 90)
-            window.save_button.click()
+            window.table.selectRow(0)
             lesion_id = window.lesion_id
             window.store.edit_value(lesion_id, "longest_diameter_mm", 11.5, "人工核对测径")
             source = window.source_dir

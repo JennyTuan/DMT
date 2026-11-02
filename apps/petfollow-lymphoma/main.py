@@ -11,12 +11,15 @@ from PySide6.QtCore import QSignalBlocker, Qt, QThread, QTimer
 from PySide6.QtWidgets import (
     QAbstractItemView, QAbstractSpinBox, QApplication, QButtonGroup, QFileDialog, QFrame, QHBoxLayout,
     QHeaderView, QLabel, QLineEdit, QMainWindow, QMessageBox, QPushButton, QSpinBox,
-    QSplitter, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget,
+    QSplitter, QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget,
 )
 
 from diameter import diameter_for_roi
 from imaging import load_study
 from measurement_ui import FIELDS, display_value, edit_value_dialog, show_history
+from pairing import Pairing
+from pairing_ui import ComparisonPanel, choose_prior
+from report_ui import ReportDialog
 from roi_store import StudyStore, grow_region
 from suv import suv_for_roi
 from viewport import SliceView
@@ -24,7 +27,7 @@ from viewport import SliceView
 APP_DIR = Path(__file__).resolve().parent
 ROOT = APP_DIR.parents[1]
 sys.path.insert(0, str(ROOT))
-from fixtures.make_demo import make_demo
+from fixtures.make_demo import make_demo_pair
 
 TITLE = "淋巴瘤 PET 随访原型"
 BANNER = "原型·不可用于临床诊疗决策"
@@ -50,16 +53,31 @@ class ImportTask(QThread):
         self.root = root
         self.directory = directory
         self.error = ""
+        self.demo_paths = None
+
+    def open_study(self, directory, *, seed_demo=False):
+        study = load_study(directory)
+        store = StudyStore(self.root, study.exam, measure=partial(measure_roi, study))
+        if seed_demo and not store.bundle["lesions"]:
+            mask = grow_region(study.pet[10], 104, 90, .65)
+            store.save_roi(mask, slice_index=10, sop_uid=study.pet_uids[10], seed=(104, 90),
+                           fraction=.65, label="纵隔示意病灶")
+        return study, store
+
+    def open_demo(self):
+        base_dir, follow_dir = make_demo_pair(self.root / "data" / "fixtures")
+        self.demo_paths = (base_dir, follow_dir)
+        _, baseline = self.open_study(base_dir, seed_demo=True)
+        self.study, self.store = self.open_study(follow_dir, seed_demo=True)
+        Pairing(self.store).ensure_demo_prior(baseline.exam_id)
+        self.directory = follow_dir
 
     def run(self):
         try:
             if self.directory is None:
-                fixtures = self.root / "data" / "fixtures"
-                self.directory = fixtures / "petfollow-demo-v2"
-                if not self.directory.exists():
-                    make_demo(fixtures, quantitative=True)
-            self.study = load_study(self.directory)
-            self.store = StudyStore(self.root, self.study.exam, measure=partial(measure_roi, self.study))
+                self.open_demo()
+            else:
+                self.study, self.store = self.open_study(self.directory)
         except Exception as exc:
             self.error = str(exc) or type(exc).__name__
 
@@ -84,6 +102,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.data_root = Path(data_root)
         self.source_dir = self.study = self.store = self.import_task = None
+        self.demo_paths = self.pairing = None
         self.mask = self.seed = self.roi_slice = self.lesion_id = None
         self.measurements = {}
         self.dirty = self.edited = False
@@ -115,8 +134,17 @@ class MainWindow(QMainWindow):
         bar.addStretch()
         self.demo_button = QPushButton("载入示意数据")
         self.import_button = QPushButton("导入 DICOM 目录", objectName="primary")
+        self.prior_button = QPushButton("关联上次")
+        self.report_button = QPushButton("报告草稿")
+        self.prior_button.clicked.connect(self.choose_prior)
+        self.report_button.clicked.connect(self.open_report)
+        self.prior_button.setEnabled(False)
+        self.report_button.setEnabled(False)
         self.demo_button.clicked.connect(lambda: self.open_directory(None))
         self.import_button.clicked.connect(self.choose_directory)
+        bar.addWidget(self.prior_button)
+        bar.addWidget(self.report_button)
+        bar.addSpacing(8)
         bar.addWidget(self.demo_button)
         bar.addWidget(self.import_button)
         shell.addWidget(actions)
@@ -128,11 +156,15 @@ class MainWindow(QMainWindow):
         self.correction = caption("衰减校正   —", "muted")
         self.synthetic_badge = caption("示意数据", "synthetic")
         self.synthetic_badge.hide()
+        self.switch_demo_button = QPushButton()
+        self.switch_demo_button.hide()
+        self.switch_demo_button.clicked.connect(self.switch_demo)
         bar.addWidget(self.exam_info)
         bar.addSpacing(14)
         bar.addWidget(self.correction)
         bar.addStretch()
         bar.addWidget(self.synthetic_badge)
+        bar.addWidget(self.switch_demo_button)
         shell.addWidget(context)
 
         self.workspace = QSplitter(Qt.Orientation.Horizontal)
@@ -141,7 +173,16 @@ class MainWindow(QMainWindow):
         self.pet, self.ct = SliceView("PET"), SliceView("CT")
         self.workspace.addWidget(self.pet)
         self.workspace.addWidget(self.ct)
-        self.workspace.addWidget(self.build_sidebar())
+        self.tabs = QTabWidget()
+        self.tabs.setMinimumWidth(320)
+        self.tabs.setMaximumWidth(490)
+        self.tabs.addTab(self.build_sidebar(), "本次病灶")
+        self.comparison = ComparisonPanel()
+        self.comparison.action_requested.connect(self.change_pair)
+        self.comparison.lesion_selected.connect(self.focus_comparison_lesion)
+        self.tabs.addTab(self.comparison, "前后对照")
+        self.tabs.currentChanged.connect(self.refresh_comparison)
+        self.workspace.addWidget(self.tabs)
         self.workspace.setStretchFactor(0, 1)
         self.workspace.setStretchFactor(1, 1)
         self.workspace.setSizes([480, 480, 370])
@@ -259,6 +300,9 @@ class MainWindow(QMainWindow):
         self.workspace.setEnabled(False)
         self.import_button.setEnabled(False)
         self.demo_button.setEnabled(False)
+        self.prior_button.setEnabled(False)
+        self.report_button.setEnabled(False)
+        self.switch_demo_button.setEnabled(False)
         self.import_task.start()
 
     def import_finished(self):
@@ -267,12 +311,26 @@ class MainWindow(QMainWindow):
         self.workspace.setEnabled(True)
         self.import_button.setEnabled(True)
         self.demo_button.setEnabled(True)
+        self.prior_button.setEnabled(self.store is not None or not task.error)
+        self.report_button.setEnabled(self.prior_button.isEnabled())
+        self.switch_demo_button.setEnabled(True)
         task.deleteLater()
         if task.error:
             self.message.setText("导入失败 · " + task.error)
             return
         self.study, self.store, self.source_dir = task.study, task.store, task.directory
-        exam = self.study.exam
+        self.pairing = Pairing(self.store)
+        if task.demo_paths is not None:
+            self.demo_paths = task.demo_paths
+        demo_visit = self.demo_paths is not None and self.source_dir in self.demo_paths
+        if demo_visit:
+            is_baseline = self.source_dir == self.demo_paths[0]
+            self.switch_demo_button.setText("切至示意随访" if is_baseline else "切至示意基线")
+            self.synthetic_badge.setText("示意数据 · 基线" if is_baseline else "示意数据 · 随访")
+        else:
+            self.synthetic_badge.setText("示意数据")
+        self.switch_demo_button.setVisible(demo_visit)
+        exam = self.store.bundle["exam"]
         self.clear_editor()
         self.pet.set_volume(self.study.pet, self.study.pet_spacing, inverted=self.study.pet_inverted)
         self.ct.set_volume(self.study.ct, self.study.ct_spacing, inverted=self.study.ct_inverted)
@@ -287,6 +345,72 @@ class MainWindow(QMainWindow):
         self.correction.setText("衰减校正   " + correction)
         self.refresh_list()
         self.message.setText("检查已载入 · PET 与 CT 独立切层。在 PET 视口点种子，或从右侧选择已有病灶。")
+
+    def switch_demo(self):
+        if self.demo_paths:
+            base, follow = self.demo_paths
+            self.open_directory(follow if self.source_dir == base else base)
+
+    def choose_prior(self):
+        if self.dirty:
+            self.message.setText("请先保存 ROI 修改，再关联上次检查。")
+            return
+        try:
+            accepted, prior_id = choose_prior(self, self.store.bundle["exam"], self.pairing.candidates())
+            if accepted:
+                self.pairing.set_prior(prior_id)
+                self.tabs.setCurrentWidget(self.comparison)
+                self.refresh_comparison()
+                self.message.setText("已保存先验关联。" if prior_id else "当前检查已解除先验关联。")
+        except (ValueError, OSError) as exc:
+            self.message.setText("关联未完成 · " + str(exc))
+
+    def refresh_comparison(self, *_):
+        if not self.pairing or self.tabs.currentWidget() != self.comparison:
+            return
+        if self.dirty:
+            self.tabs.setCurrentIndex(0)
+            self.message.setText("请先保存 ROI 修改，再查看前后对照。")
+            return
+        try:
+            self.comparison.populate(*self.pairing.snapshot(), focused_id=self.lesion_id)
+        except (ValueError, OSError) as exc:
+            self.comparison.clear(str(exc))
+            self.message.setText("无法读取对照 · " + str(exc))
+
+    def focus_comparison_lesion(self, lesion_id):
+        if lesion_id is None:
+            self.clear_editor()
+        elif lesion_id != self.lesion_id:
+            for index, lesion in enumerate(self.store.bundle["lesions"]):
+                if lesion["lesion_id"] == lesion_id:
+                    self.table.selectRow(index)
+                    break
+
+    def change_pair(self, operation, current_id, prior_id):
+        try:
+            if operation == "pair":
+                self.pairing.pair(current_id, prior_id)
+            elif operation == "unpair":
+                self.pairing.unpair(current_id)
+            elif operation == "new_track":
+                self.pairing.new_track(current_id)
+            self.refresh_list()
+            self.message.setText("已保存跟踪关系；配对变更已留痕。")
+        except (ValueError, OSError) as exc:
+            self.message.setText("配对未完成 · " + str(exc))
+
+    def open_report(self):
+        if self.dirty:
+            self.message.setText("请先保存 ROI 修改，再从已保存量测生成报告草稿。")
+            return
+        try:
+            dialog = ReportDialog(self, self.data_root, self.pairing.snapshot)
+            dialog.exec()
+            dialog.deleteLater()
+            self.refresh_comparison()
+        except (ValueError, OSError) as exc:
+            self.message.setText("无法打开报告草稿 · " + str(exc))
 
     def refresh_list(self):
         lesions = self.store.bundle["lesions"]
@@ -313,6 +437,7 @@ class MainWindow(QMainWindow):
                 if self.lesion_id == lesion["lesion_id"]:
                     self.table.selectRow(index)
         self.count.setText(f"{len(lesions):02}")
+        self.refresh_comparison()
         self.update_measurement_details()
         self.update_controls()
 
@@ -454,7 +579,7 @@ class MainWindow(QMainWindow):
             self.regrow(self.roi_slice, *self.seed)
 
     def pet_click(self, x, y):
-        if self.study is None:
+        if self.study is None or self.tabs.currentWidget() == self.comparison:
             return
         if not self.seed_button.isChecked():
             self.brush(x, y)
@@ -477,7 +602,8 @@ class MainWindow(QMainWindow):
         self.message.setText(f"轮廓待保存 · PET 第 {layer + 1} 层，种子 ({x}, {y})。可调整阈值、涂入或擦除。")
 
     def brush(self, x, y):
-        if self.mask is None or self.pet.index != self.roi_slice or self.seed_button.isChecked():
+        if (self.mask is None or self.pet.index != self.roi_slice or self.seed_button.isChecked()
+                or self.tabs.currentWidget() == self.comparison):
             return
         height, width = self.mask.shape
         area = self.mask[max(0, y-2):min(height, y+3), max(0, x-2):min(width, x+3)]

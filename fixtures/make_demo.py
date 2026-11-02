@@ -1,4 +1,4 @@
-"""Create a reproducible, wholly synthetic thorax PET/CT DICOM study."""
+"""Create reproducible, wholly synthetic thorax PET/CT DICOM studies."""
 import argparse
 from io import BytesIO
 from pathlib import Path
@@ -10,11 +10,14 @@ from pydicom.dataset import Dataset, FileDataset, FileMetaDataset
 from pydicom.uid import CTImageStorage, ExplicitVRLittleEndian, PositronEmissionTomographyImageStorage
 
 
+_BASELINE = "demo-v2-baseline"
+
+
 def _uid(name, version):
     return f"2.25.{uuid5(NAMESPACE_URL, f'petfollow-lymphoma/{version}/{name}').int}"
 
 
-def _phantom(modality, size, z, rng):
+def _phantom(modality, size, z, rng, baseline):
     """Analytic cross-section, in normalized field-of-view coordinates."""
     axis = (np.arange(size) + 0.5) * 2 / size - 1
     x, y = np.meshgrid(axis, axis)
@@ -28,16 +31,17 @@ def _phantom(modality, size, z, rng):
     heart = ellipse(0.09 + 0.02 * z, 0.045, 0.24 + 0.05 * z, 0.29 + 0.035 * z, 0.30)
     lung = (np.minimum(left, right) < 1) & (heart > 1)
     vertebra = ellipse(0, 0.435, 0.14, 0.095)
-    focus = ellipse(0.088, -0.057, 0.056, 0.050) + (z / 0.45) ** 2
+    rx, ry, activity = (0.078, 0.067, 2620) if baseline else (0.056, 0.050, 1900)
+    focus = ellipse(0.088, -0.057, rx, ry) + (z / 0.45) ** 2
 
     if modality == "PT":
-        # A deterministic synthetic spatial pattern shared by both demo versions.
+        # Use the same anatomy and seed location across the visits.
         sigmoid = lambda distance: 1 / (1 + np.exp(np.clip(15 * (distance - 1), -40, 40)))
         tissue = sigmoid(body)
         lungs = sigmoid(np.minimum(left, right)) * (1 - sigmoid(heart))
         values = tissue * (235 - 135 * lungs + 36 * np.cos(10 * x + 4 * y + z))
         values += 235 * np.exp(-2.5 * (np.sqrt(heart) - 0.82) ** 2 - 0.85 * heart)
-        values += 180 * np.exp(-1.1 * vertebra) + 1900 * np.exp(-1.25 * focus)
+        values += 180 * np.exp(-1.1 * vertebra) + activity * np.exp(-1.25 * focus)
         values += rng.normal(0, 8, values.shape) * tissue
         return np.rint(np.maximum(values, 0)).astype("<i2")
 
@@ -75,13 +79,13 @@ def _phantom(modality, size, z, rng):
     return np.rint(values).astype("<i2")
 
 
-def _instance(modality, index, count, size, spacing, quantitative):
+def _instance(modality, index, count, size, spacing, version):
     name = f"{modality}/{index + 1:03d}"
     meta = FileMetaDataset()
     meta.TransferSyntaxUID = ExplicitVRLittleEndian
     ds = FileDataset(None, {}, preamble=b"\0" * 128, file_meta=meta)
     ds.SOPClassUID = PositronEmissionTomographyImageStorage if modality == "PT" else CTImageStorage
-    version = "demo-v2" if quantitative else "demo-v1"
+    baseline = version == _BASELINE
     ds.SOPInstanceUID = _uid(name, version)
     ds.SeriesInstanceUID = _uid(modality, version)
     ds.StudyInstanceUID = _uid("study", version)
@@ -92,7 +96,8 @@ def _instance(modality, index, count, size, spacing, quantitative):
     ds.PatientName = "SYNTHETIC^PHANTOM"
     ds.PatientID = "PETFOLLOW-SYNTHETIC-01"
     ds.StudyDescription = "Synthetic thorax phantom"
-    ds.StudyDate, ds.StudyTime, ds.TimezoneOffsetFromUTC = "20260110", "090000", "+0800"
+    ds.StudyDate = "20251010" if baseline else "20260110"
+    ds.StudyTime, ds.TimezoneOffsetFromUTC = "090000", "+0800"
     ds.SeriesNumber = 1 if modality == "PT" else 2
     ds.InstanceNumber = index + 1
     ds.Rows, ds.Columns = size, size
@@ -108,7 +113,7 @@ def _instance(modality, index, count, size, spacing, quantitative):
     if modality == "PT":
         ds.CorrectedImage = ["ATTN"]
         ds.Units = "CNTS"
-        if quantitative:
+        if version != "demo-v1":
             # v2 models a synthetic activity concentration, 8 Bq/ml per step.
             ds.Units, ds.RescaleSlope = "BQML", 8
             ds.CorrectedImage = ["ATTN", "DECY"]
@@ -119,45 +124,64 @@ def _instance(modality, index, count, size, spacing, quantitative):
             ds.PatientWeight = 70
             tracer = Dataset()
             tracer.Radiopharmaceutical = "Synthetic FDG"
-            tracer.RadiopharmaceuticalStartDateTime = "20260110081500+0800"
+            tracer.RadiopharmaceuticalStartDateTime = f"{ds.StudyDate}081500+0800"
             tracer.RadionuclideTotalDose = 200_000_000
             tracer.RadionuclideHalfLife = 6586.2
             ds.RadiopharmaceuticalInformationSequence = [tracer]
     rng = np.random.default_rng(401 + index + 100 * int(ds.SeriesNumber))
-    ds.PixelData = _phantom(modality, size, z, rng).tobytes()
+    ds.PixelData = _phantom(modality, size, z, rng, baseline).tobytes()
     out = BytesIO()
     ds.save_as(out, enforce_file_format=True)
     return out.getvalue()
 
 
-def make_demo(directory: Path, *, quantitative=False):
+def _publish_study(directory: Path, version: str) -> Path:
     """Publish an entire series pair together. Never replace unrelated files."""
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
-    output = directory / ("petfollow-demo-v2" if quantitative else "petfollow-demo-v1")
+    output = directory / f"petfollow-{version}"
     with TemporaryDirectory(dir=directory) as scratch:
         staged = Path(scratch) / output.name
         for modality, count, size, spacing in [("PT", 21, 192, 2), ("CT", 31, 256, 1.5)]:
             (staged / modality).mkdir(parents=True)
             for index in range(count):
                 filename = staged / modality / f"{index + 1:03d}.dcm"
-                filename.write_bytes(_instance(modality, index, count, size, spacing, quantitative))
+                filename.write_bytes(_instance(modality, index, count, size, spacing, version))
         if not output.exists():
             try:
                 staged.rename(output)
-                return
+                return output
             except FileExistsError:
                 pass  # A concurrent run may have just published the same study.
         for instance in staged.rglob("*.dcm"):
             previous = output / instance.relative_to(staged)
             if not previous.is_file() or previous.read_bytes() != instance.read_bytes():
                 raise ValueError("目标目录已含不同内容，请选择新的示意数据目录。")
+    return output
+
+
+def make_demo(directory: Path, *, quantitative=False):
+    """Publish the original v1 counts study or v2 quantitative study."""
+    _publish_study(directory, "demo-v2" if quantitative else "demo-v1")
+
+
+def make_demo_pair(directory: Path) -> tuple[Path, Path]:
+    """Return the baseline and follow-up directories, reusing the Pack 03 follow-up."""
+    baseline = _publish_study(directory, _BASELINE)
+    followup = _publish_study(directory, "demo-v2")
+    return baseline, followup
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output_dir", type=Path)
-    parser.add_argument("--quantitative", action="store_true", help="生成含合成定量参数的 v2 示意检查")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--quantitative", action="store_true", help="生成含合成定量参数的 v2 示意检查")
+    mode.add_argument("--pair", action="store_true", help="生成同一合成患者的基线及随访检查")
     args = parser.parse_args()
-    make_demo(args.output_dir, quantitative=args.quantitative)
-    print(f"示意数据 · PET 21 层 / CT 31 层 · {args.output_dir.resolve()}")
+    if args.pair:
+        baseline, followup = make_demo_pair(args.output_dir)
+        print(f"示意数据 · 基线 {baseline.resolve()}\n示意数据 · 随访 {followup.resolve()}")
+    else:
+        make_demo(args.output_dir, quantitative=args.quantitative)
+        print(f"示意数据 · PET 21 层 / CT 31 层 · {args.output_dir.resolve()}")

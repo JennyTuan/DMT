@@ -26,7 +26,7 @@ The name **DMT** must **not** be used to claim a multi-modality platform is alre
 | [Pack 01 数据契约](docs/packs/01-data-contract.md) | Exam / Lesion / Measurement / proposed |
 | [Pack 02 导入、阅片与半自动 ROI](docs/packs/02-import-viewer-roi.md) | [本机启动与导入](#pack-02-本机启动与导入) · [桌面应用](apps/petfollow-lymphoma/) |
 | [Pack 03 SUVmax、CT 最长径与留痕](docs/packs/03-suvmax-diameter-audit.md) | [试算、改数与复核](#pack-03-量测与数值留痕) |
-| [Pack 04 先验配对 + 描述性报告草稿](docs/packs/04-prior-pairing-report-draft.md) | **当前执行**：`lesion_track_id` 对照与可编辑导出 |
+| [Pack 04 先验配对 + 描述性报告草稿](docs/packs/04-prior-pairing-report-draft.md) | [关联、配对与导出步骤](#pack-04-关联上次与导出草稿) |
 | [`docs/CODEX_BRIEF_PACK1.md`](docs/CODEX_BRIEF_PACK1.md) | Supplementary Pack 01 notes |
 | [`docs/UI_DIRECTION.md`](docs/UI_DIRECTION.md) | UI direction notes（以 UI_STYLE 为准） |
 
@@ -37,7 +37,7 @@ The name **DMT** must **not** be used to claim a multi-modality platform is alre
 | Pack 01 | [检查、病灶、量测、状态机及配对示例](schemas/v0/README.md) | PASS（f5a13ab） |
 | Pack 02 | [本地导入、双视口、可编辑 ROI](apps/petfollow-lymphoma/) | PASS（77881ed） |
 | Pack 03 | [SUVmax、CT 最长径估计、人工改数与数值留痕](docs/packs/03-suvmax-diameter-audit.md) | 已提交待人工验（509b771） |
-| Pack 04 | [先验配对 + 描述性报告草稿](docs/packs/04-prior-pairing-report-draft.md) | BRIEF 已提交，待 Codex |
+| Pack 04 | [先验配对与描述性报告草稿](docs/packs/04-prior-pairing-report-draft.md) | 已提交待人工验 |
 
 Later: 质量门
 
@@ -72,7 +72,16 @@ py -3.13 -m venv .venv
 
 **留痕位置。** 每次自动填数、ROI 修订重算和人工改数，都写入 `data/measurements/<exam_id>.history.json`，按 `measurement_id` 分组。人工改数设置 `edited=true`。检查包内的 `measurement.audit[]` 仅记录状态转换。
 
-**复验。** 在同一环境下运行应用测试和只读契约测试。
+## Pack 04 关联上次与导出草稿
+
+1. **打开一对检查。** 沿用上面的 `--demo` 命令。首次载入会生成同一示意患者的基线与随访，各有一项可编辑的纵隔 ROI，默认显示随访并关联基线。「切至示意基线」和「切至示意随访」可切换影像。已手动清除的先验不会在下次载入示意数据时恢复。
+2. **关联上次。** 对自有数据，先分别导入两次检查，再打开本次检查。点顶栏「关联上次」，选择同一患者较早的检查并保存。可重选，也可选「不关联上次检查」清除。更换先验会解除与原先验的病灶配对。
+3. **配对病灶。** 在右侧「前后对照」选中本次病灶，在候选框选上次病灶，点「指定配对」。两侧获得同一跟踪号，列表显示本次、上次、差值和量测状态。没有对应项或数值时显示 `—`。示意病灶配对后的 SUVmax 差值约为 **−2.94**，最长径差值约为 **−5.89 mm**。「解除配对」断开当前关系，「新建跟踪号」给独立病灶分配标识。若调整会影响后续检查的既有配对，先在该随访中解除相关配对。
+4. **编辑与导出。** 点顶栏「报告草稿」。上半部列出检查与病灶对照，下半部「描述」可编辑。「从当前量测重新生成」只替换上半部，保留手写段落。点「保存草稿」可供下次打开；「导出 Markdown…」将当前草稿另存为新的 UTF-8 `.md` 文件，首行固定为「原型·不可用于临床诊疗决策」。若量测或配对在保存快照后有变更，先重新生成。
+
+**本地存储。** 两次检查仍保存在各自的 `data/exams/<exam_id>.json`。本次检查用 `prior_exam_id` 引用先验，人工配对的两条病灶共享 `lesion_track_id`。配对审计单独写入 `data/pairings/<本次exam_id>.json`（版本 1），记录时间、操作者、两次检查及病灶标识和跟踪号变更。草稿保存在 `data/reports/<exam_id>.json`（版本 1），分别保存生成区快照和手写描述。示意 DICOM 目录为 `data/fixtures/petfollow-demo-v2-baseline/` 和 `data/fixtures/petfollow-demo-v2/`。
+
+**复验。** 在同一环境下运行工作站测试和数据契约测试。
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
@@ -81,4 +90,4 @@ py -3.13 -m venv .venv
 
 ## For Codex
 
-一次只做一个 pack。当前贴：[`docs/packs/04-prior-pairing-report-draft.md`](docs/packs/04-prior-pairing-report-draft.md) 文末「可复制提示词」。
+当前执行范围与人工验收清单见 [Pack 04 先验配对与描述性报告草稿](docs/packs/04-prior-pairing-report-draft.md)。

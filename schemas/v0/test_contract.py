@@ -77,6 +77,22 @@ class Pack01(unittest.TestCase):
         self.assertEqual(current["patient_pseudo_id"], prior["patient_pseudo_id"])
         self.assertLess(datetime.fromisoformat(prior["study_datetime"]),
                         datetime.fromisoformat(current["study_datetime"]))
+        earlier = baseline["lesions"][0]
+        later = followup["lesions"][0]
+        self.assertNotEqual(earlier["lesion_id"], later["lesion_id"])
+        self.assertTrue(earlier["lesion_track_id"])
+        self.assertEqual(earlier["lesion_track_id"], later["lesion_track_id"])
+
+    def test_lesion_track_is_optional_and_nullable(self):
+        check = validator("lesion")
+        lesion = example("baseline")["lesions"][0]
+        legacy = {k: v for k, v in lesion.items() if k != "lesion_track_id"}
+        check.validate(legacy)
+        for value in (None, "track-demo"):
+            check.validate({**legacy, "lesion_track_id": value})
+        for value in (1, False, [], {}):
+            with self.subTest(value=value):
+                self.assertFalse(check.is_valid({**legacy, "lesion_track_id": value}))
 
     def test_only_authorized_transitions(self):
         states = ("draft", "proposed", "needs_review", "accepted", "rejected")

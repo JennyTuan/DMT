@@ -42,4 +42,7 @@ QHeaderView::section { background: #30383e; color: #b8c6cc; border: none; paddin
 QTableWidget::item { padding: 2px 4px; }
 QTableWidget::item:selected { background: #344d54; color: #e5f3f3; }
 QSplitter::handle { background: #424c52; }
+QTabWidget::pane { border: 1px solid #39434a; }
+QTabBar::tab { color: #afbac1; background: #252c32; padding: 5px 13px; }
+QTabBar::tab:selected { color: #e5f4f3; background: #314147; border-bottom: 2px solid #7ea6a9; }
 QToolTip { background: #323d43; color: #eef3f3; border: 1px solid #59676f; padding: 3px; }

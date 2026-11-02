@@ -15,6 +15,7 @@
   "lesions": [
     {
       "lesion_id": "les_demo_001_mediastinum",
+      "lesion_track_id": "track_demo_001_mediastinum",
       "exam_id": "ex_lymphoma_demo_baseline",
       "label": "纵隔淋巴结",
       "status": "proposed",

@@ -196,37 +196,15 @@ def _validate_events(events):
         previous[field] = event["to"]
 
 
-class StudyStore:
-    def __init__(self, root: Path, exam: dict, measure=None):
-        initial = {"exam": deepcopy(exam), "lesions": [], "measurements": []}
-        _validate_bundle(initial)
+class _StudyFiles:
+    def __init__(self, root, exam_id):
         self.root = Path(root).resolve()
-        self.exam_id = _safe_id(exam["exam_id"])
-        self.measure = measure
+        self.exam_id = _safe_id(exam_id)
         self.path = _local_path(self.root, Path("data/exams") / (self.exam_id + ".json"))
         self.lock_path = _local_path(self.root, self.path.with_suffix(".lock"))
         self.history_path = _local_path(self.root, Path("data/measurements") / (self.exam_id + ".history.json"))
         self.journal_path = _local_path(self.root, self.path.with_suffix(".pending"))
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        with _writer_lock(self.lock_path):
-            self._recover()
-            self._history = self._read_history()
-            if self.path.exists():
-                self.bundle = _read_json(self.path)
-                _validate_bundle(self.bundle)
-                identity = ("exam_id", "patient_pseudo_id", "pet_series_ref", "ct_series_ref")
-                saved = self.bundle["exam"]
-                if any(saved[key] != exam[key] for key in identity):
-                    raise ValueError("此检查标识已对应其他患者或影像序列")
-                if (saved["attenuation_corrected"] != exam["attenuation_corrected"]
-                        or saved.get("is_synthetic", False) != exam.get("is_synthetic", False)
-                        or saved["study_datetime"] != exam["study_datetime"]):
-                    raise ValueError("检查时间、校正或示意标记与已保存记录不一致，请核对原始序列")
-            else:
-                _write_json(self.path, initial)
-                self.bundle = initial
-            if self.measure is not None:
-                self._backfill()
 
     def _read_history(self):
         if not self.history_path.exists():
@@ -260,9 +238,50 @@ class StudyStore:
                 self._roi_path(pending["lesion_id"], pending["roi_ref"]).unlink(missing_ok=True)
         self.journal_path.unlink()
 
+    def _roi_path(self, lesion_id, ref):
+        folder = Path("data/rois") / self.exam_id / _safe_id(lesion_id)
+        path = Path(ref or "")
+        if path.parent != folder or not re.fullmatch(r"[0-9a-f]{32}\.json", path.name):
+            raise ValueError("ROI 引用不属于当前检查与病灶")
+        return _local_path(self.root, path)
+
+    @contextmanager
+    def _locked(self):
+        # Recover Pack 04 before reading/replaying this exam's Pack 03 journal.
+        from pairing import workspace_lock
+        with workspace_lock(self.root), _writer_lock(self.lock_path):
+            yield
+
+
+class StudyStore(_StudyFiles):
+    def __init__(self, root: Path, exam: dict, measure=None):
+        initial = {"exam": deepcopy(exam), "lesions": [], "measurements": []}
+        _validate_bundle(initial)
+        super().__init__(root, exam["exam_id"])
+        self.measure = measure
+        with self._locked():
+            self._recover()
+            self._history = self._read_history()
+            if self.path.exists():
+                self.bundle = _read_json(self.path)
+                _validate_bundle(self.bundle)
+                identity = ("exam_id", "patient_pseudo_id", "pet_series_ref", "ct_series_ref")
+                saved = self.bundle["exam"]
+                if any(saved[key] != exam[key] for key in identity):
+                    raise ValueError("此检查标识已对应其他患者或影像序列")
+                if (saved["attenuation_corrected"] != exam["attenuation_corrected"]
+                        or saved.get("is_synthetic", False) != exam.get("is_synthetic", False)
+                        or saved["study_datetime"] != exam["study_datetime"]):
+                    raise ValueError("检查时间、校正或示意标记与已保存记录不一致，请核对原始序列")
+            else:
+                _write_json(self.path, initial)
+                self.bundle = initial
+            if self.measure is not None:
+                self._backfill()
+
     @contextmanager
     def _writing(self):
-        with _writer_lock(self.lock_path):
+        with self._locked():
             self._recover()
             if _read_json(self.path) != self.bundle or self._read_history() != self._history:
                 raise ValueError("其他窗口已更新此检查，请重新打开后再编辑")
@@ -404,13 +423,6 @@ class StudyStore:
             self._measure_roi(measurement, history, mask, meta, at, current=current, roi_error=error)
         if bundle != self.bundle or history != self._history["by_measurement"]:
             self._commit(bundle, history)
-
-    def _roi_path(self, lesion_id, ref):
-        folder = Path("data/rois") / self.exam_id / _safe_id(lesion_id)
-        path = Path(ref or "")
-        if path.parent != folder or not re.fullmatch(r"[0-9a-f]{32}\.json", path.name):
-            raise ValueError("ROI 引用不属于当前检查与病灶")
-        return _local_path(self.root, path)
 
     def load_roi(self, lesion_id: str) -> tuple[np.ndarray, dict]:
         _, measurement = _records(self.bundle, _safe_id(lesion_id))
