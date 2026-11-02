@@ -20,6 +20,7 @@ import numpy as np
 from jsonschema import Draft202012Validator, FormatChecker, ValidationError
 from referencing import Registry, Resource
 
+from quality_gate import measurement_gates
 
 _FIELDS = ("suv_max", "longest_diameter_mm")
 _EDITABLE = {"proposed", "needs_review"}
@@ -179,6 +180,16 @@ def _roi_source(mask, meta):
             "mask_sha256": digest.hexdigest()}
 
 
+def _current_events(history, measurement):
+    return [event for event in history.get(measurement["measurement_id"], ())
+            if event["roi_ref"] == measurement["roi_ref"]]
+
+
+def _source_errors(events):
+    latest = {e["field"]: e for e in events if e["actor"] == "system"}
+    return {field: event["source_error"] for field, event in latest.items() if event.get("source_error")}
+
+
 def _validate_events(events):
     previous = {}
     for event in events:
@@ -324,12 +335,13 @@ class StudyStore(_StudyFiles):
         _, measurement = _records(self.bundle, lesion_id)
         return deepcopy(self._history["by_measurement"].get(measurement["measurement_id"], []))
 
-    def _review(self, measurement, at, reasons):
-        if not self.bundle["exam"]["attenuation_corrected"]:
-            reasons = [_NO_ATTENUATION, *reasons]
+    def _review(self, measurement, at, *, roi_valid, field_errors, quantitative=True):
+        gates = measurement_gates(self.bundle["exam"], measurement, roi_valid=roi_valid,
+                                  field_errors=field_errors, quantitative=quantitative)
+        reasons = [f"{g['gate_id']} · {g['message']}" for g in gates if g["level"] == "review"]
         if reasons and measurement["state"] == "proposed":
             measurement["audit"].append({"at": at, "actor": "system", "from": "proposed",
-                                         "to": "needs_review", "note": "；".join(dict.fromkeys(reasons))})
+                                         "to": "needs_review", "note": "；".join(reasons)})
             measurement["state"] = "needs_review"
 
     def edit_value(self, lesion_id, field, value, note):
@@ -345,12 +357,10 @@ class StudyStore(_StudyFiles):
             at = datetime.now(timezone.utc).isoformat()
             _record_value(history, measurement, field, value, "user", at, note.strip())
             measurement["edited"] = True
-            self._review(measurement, at, [])
+            self._check_stored(measurement, history, recheck_at=at)
             self._commit(bundle, history)
 
-    def _measure_roi(self, measurement, history, mask, meta, at, *, current=None, roi_error=None):
-        # Explicit ROI saves always generate two entries. On reopen, compare the
-        # current DICOM evidence per field, keeping any prior human override.
+    def _calculate_roi(self, mask, meta, roi_error):
         source = {}
         try:
             if roi_error:
@@ -366,11 +376,16 @@ class StudyStore(_StudyFiles):
             reason = f"ROI 量测失败（{exc}）" if isinstance(exc, ValueError) else "ROI 量测失败，请核对影像与元数据"
             values = dict.fromkeys(_FIELDS)
             notes = dict.fromkeys(_FIELDS, reason)
-        reasons = [notes[f] for f in _FIELDS if values[f] is None]
         if not self.bundle["exam"]["attenuation_corrected"]:
             values["suv_max"] = None
             if _NO_ATTENUATION not in notes["suv_max"]:
                 notes = {**notes, "suv_max": f"{notes['suv_max']}。{_NO_ATTENUATION}"}
+        return source, values, notes
+
+    def _measure_roi(self, measurement, history, mask, meta, at, *, current=None, roi_error=None):
+        # Explicit ROI saves always generate two entries. On reopen, compare the
+        # current DICOM evidence per field, keeping any prior human override.
+        source, values, notes = self._calculate_roi(mask, meta, roi_error)
         latest = {e["field"]: e for e in current or ()}
         automatic = {e["field"]: e for e in current or () if e["actor"] == "system"}
         for field in _FIELDS:
@@ -397,35 +412,71 @@ class StudyStore(_StudyFiles):
                 elif last and value == measurement[field] and issue == prior_issue:
                     continue
             _record_value(history, measurement, field, value, "system", at, note, **evidence)
-        self._review(measurement, at, reasons)
+        errors = {field: notes[field] for field in _FIELDS if values[field] is None}
+        self._review(measurement, at, roi_valid=roi_error is None, field_errors=errors)
+
+    def _check_stored(self, measurement, history, *, recheck_at=None):
+        """Inspect the active version. A timestamp also requests a transactional measurement recheck."""
+        current = _current_events(history, measurement)
+        mask = meta = roi_error = None
+        try:
+            mask, meta = self._read_roi(measurement)
+            source = _roi_source(mask, meta)
+            if any(event[k] != v for event in current for k, v in source.items() if k in event):
+                raise ValueError("ROI 像素、PET 实例或层面与量测留痕不符")
+        except (ValueError, OSError) as exc:
+            roi_error = str(exc)
+
+        if measurement["state"] in ("accepted", "rejected") and self.measure is not None:
+            # Verify the evidence for a historical decision without changing that decision or its values.
+            _, values, notes = self._calculate_roi(mask, meta, roi_error)
+            return roi_error is None, {f: notes[f] for f in _FIELDS if values[f] is None}
+        if recheck_at is not None:
+            calculated = any(e["actor"] == "system" for e in current)
+            if self.measure is not None or (calculated and roi_error is not None):
+                self._measure_roi(measurement, history, mask, meta, recheck_at, current=current, roi_error=roi_error)
+                current = _current_events(history, measurement)
+            else:
+                # Contour-only Pack 02 records have no numeric calculation to assess.
+                self._review(measurement, recheck_at, roi_valid=roi_error is None,
+                             field_errors=_source_errors(current), quantitative=calculated)
+        return roi_error is None, _source_errors(current)
+
+    def quality_evidence(self):
+        """Read mask validity and current automatic source errors by measurement ID."""
+        validity, errors = {}, {}
+        for m in self.bundle["measurements"]:
+            key = m["measurement_id"]
+            validity[key], errors[key] = self._check_stored(m, self._history["by_measurement"])
+        return validity, errors
+
+    def refresh_quality(self):
+        """Recheck editable records under the writer lock and return evidence for every target."""
+        with self._writing():
+            return self._backfill()
 
     def _backfill(self):
         bundle = deepcopy(self.bundle)
         history = deepcopy(self._history["by_measurement"])
         at = datetime.now(timezone.utc).isoformat()
+        validity, errors = {}, {}
+        lesions = {lesion["lesion_id"]: lesion for lesion in bundle["lesions"]}
         for measurement in bundle["measurements"]:
-            lesion_id = measurement["lesion_id"]
-            lesion, _ = _records(bundle, lesion_id)
-            if measurement["state"] not in _EDITABLE or lesion["status"] not in _EDITABLE:
-                continue
-            if any(e["to"] == "needs_review" and e["actor"] == "user" for e in measurement["audit"]):
-                continue
-            events = history.get(measurement["measurement_id"], [])
-            current = [e for e in events if e["roi_ref"] == measurement["roi_ref"]]
-            meta = mask = error = None
-            try:
-                mask, meta = self.load_roi(lesion_id)
-                source = _roi_source(mask, meta)
-                if any(event[k] != v for event in current for k, v in source.items() if k in event):
-                    raise ValueError("ROI 像素、PET 实例或层面与量测留痕不符")
-            except ValueError as exc:
-                error = str(exc)
-            self._measure_roi(measurement, history, mask, meta, at, current=current, roi_error=error)
+            lesion = lesions[measurement["lesion_id"]]
+            editable = measurement["state"] in _EDITABLE and lesion["status"] in _EDITABLE
+            key = measurement["measurement_id"]
+            validity[key], errors[key] = self._check_stored(measurement, history,
+                                                            recheck_at=at if editable else None)
         if bundle != self.bundle or history != self._history["by_measurement"]:
             self._commit(bundle, history)
+        return validity, errors
 
     def load_roi(self, lesion_id: str) -> tuple[np.ndarray, dict]:
         _, measurement = _records(self.bundle, _safe_id(lesion_id))
+        return self._read_roi(measurement)
+
+    def _read_roi(self, measurement):
+        lesion_id = measurement["lesion_id"]
         record = _read_json(self._roi_path(lesion_id, measurement["roi_ref"]))
         try:
             if (record["exam_id"] != self.exam_id or record["lesion_id"] != lesion_id
@@ -462,7 +513,7 @@ class StudyStore(_StudyFiles):
         mask = np.asarray(mask)
         _check_seed(mask.shape, *seed, fraction)
         if mask.dtype != np.bool_ or not mask.any():
-            raise ValueError("请保留至少一个 ROI 像素后再保存")
+            raise ValueError("ROI_EMPTY · 请保留至少一个 ROI 像素后再保存")
         _check_slice(slice_index, sop_uid)
         label = label.strip()
         if not label:
@@ -508,6 +559,7 @@ class StudyStore(_StudyFiles):
         }
         if self.measure is None:
             measurement.update(suv_max=None, longest_diameter_mm=None)
+            self._review(measurement, at, roi_valid=True, field_errors={}, quantitative=False)
         else:
             self._measure_roi(measurement, history, mask, record, at)
         self._commit(bundle, history, roi_ref=ref, record=record)

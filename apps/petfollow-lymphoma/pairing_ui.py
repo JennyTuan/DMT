@@ -61,6 +61,8 @@ class ComparisonPanel(QWidget):
         super().__init__()
         self.rows = []
         self.exam_id = None
+        self.prior_id = None
+        self.skipped = set()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(10, 10, 10, 10)
         self.source = QLabel("尚未载入检查", objectName="section")
@@ -97,6 +99,9 @@ class ComparisonPanel(QWidget):
             controls.addWidget(button)
             button.clicked.connect(lambda _, op=operation: self.request_action(op))
         layout.addLayout(controls)
+        self.skip_button = QPushButton("跳过本次配对")
+        self.skip_button.clicked.connect(self.toggle_skip)
+        layout.addWidget(self.skip_button)
         self.update_buttons()
 
     def selection(self):
@@ -114,9 +119,11 @@ class ComparisonPanel(QWidget):
         self.detail.setText(message)
         self.update_buttons()
 
-    def populate(self, current, prior, focused_id=None):
+    def populate(self, current, prior, focused_id=None, skipped=()):
         selected = self.selection() if self.exam_id == current["exam"]["exam_id"] else None
         self.exam_id = current["exam"]["exam_id"]
+        self.prior_id = prior["exam"]["exam_id"] if prior else None
+        self.skipped = set(skipped)
         selected_id = focused_id or (selected["lesion_id"] if selected else None)
         rows = comparison_rows(current, prior)
         self.source.setText("上次   " + visit_caption(prior["exam"]) if prior else "尚未关联上次检查")
@@ -135,6 +142,8 @@ class ComparisonPanel(QWidget):
                 start = index * 4
                 paired = item["lesion_id"] and item["prior_lesion_id"]
                 kind = "已配对" if paired else ("本次未配对" if item["lesion_id"] else "上次未配对")
+                if item["lesion_id"] in self.skipped and not paired:
+                    kind = "已跳过配对"
                 label = item["label"]
                 if paired and item["prior_label"] != label:
                     label += " / " + item["prior_label"]
@@ -179,6 +188,14 @@ class ComparisonPanel(QWidget):
         self.pair_button.setEnabled(bool(current and target and item["prior_lesion_id"] != target))
         self.unpair_button.setEnabled(bool(current and item["prior_lesion_id"]))
         self.track_button.setEnabled(bool(current and not item["track_id"]))
+        self.skip_button.setEnabled(bool(self.prior_id and current and not item["prior_lesion_id"]))
+        is_skipped = bool(current and item["lesion_id"] in self.skipped)
+        self.skip_button.setText("取消跳过" if is_skipped else "跳过本次配对")
+
+    def toggle_skip(self):
+        item = self.selection()
+        if item and item["lesion_id"]:
+            self.request_action("unskip" if item["lesion_id"] in self.skipped else "skip")
 
     def request_action(self, operation):
         item = self.selection()

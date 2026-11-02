@@ -19,6 +19,8 @@ from imaging import load_study
 from measurement_ui import FIELDS, display_value, edit_value_dialog, show_history
 from pairing import Pairing
 from pairing_ui import ComparisonPanel, choose_prior
+from quality_gate import BANNER
+from quality_review import QualityReview, show_quality
 from report_ui import ReportDialog
 from roi_store import StudyStore, grow_region
 from suv import suv_for_roi
@@ -30,7 +32,6 @@ sys.path.insert(0, str(ROOT))
 from fixtures.make_demo import make_demo_pair
 
 TITLE = "淋巴瘤 PET 随访原型"
-BANNER = "原型·不可用于临床诊疗决策"
 
 
 def check_roi_source(study, mask, slice_index, sop_uid):
@@ -136,6 +137,9 @@ class MainWindow(QMainWindow):
         self.import_button = QPushButton("导入 DICOM 目录", objectName="primary")
         self.prior_button = QPushButton("关联上次")
         self.report_button = QPushButton("报告草稿")
+        self.quality_button = QPushButton("质量门")
+        self.quality_button.clicked.connect(self.open_quality)
+        self.quality_button.setEnabled(False)
         self.prior_button.clicked.connect(self.choose_prior)
         self.report_button.clicked.connect(self.open_report)
         self.prior_button.setEnabled(False)
@@ -143,6 +147,7 @@ class MainWindow(QMainWindow):
         self.demo_button.clicked.connect(lambda: self.open_directory(None))
         self.import_button.clicked.connect(self.choose_directory)
         bar.addWidget(self.prior_button)
+        bar.addWidget(self.quality_button)
         bar.addWidget(self.report_button)
         bar.addSpacing(8)
         bar.addWidget(self.demo_button)
@@ -277,7 +282,7 @@ class MainWindow(QMainWindow):
         return side
 
     def choose_directory(self):
-        path = QFileDialog.getExistingDirectory(self, "选择同次检查的 PET 和 CT 目录")
+        path = QFileDialog.getExistingDirectory(self, BANNER + " · 选择同次检查的 PET 和 CT 目录")
         if path:
             self.open_directory(Path(path))
 
@@ -285,7 +290,7 @@ class MainWindow(QMainWindow):
         if not self.dirty:
             return True
         answer = QMessageBox.question(
-            self, "轮廓尚未保存", "放弃当前未保存的 ROI 修改？",
+            self, BANNER, "放弃当前未保存的 ROI 修改？",
             QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
             QMessageBox.StandardButton.Cancel,
         )
@@ -303,6 +308,7 @@ class MainWindow(QMainWindow):
         self.prior_button.setEnabled(False)
         self.report_button.setEnabled(False)
         self.switch_demo_button.setEnabled(False)
+        self.quality_button.setEnabled(False)
         self.import_task.start()
 
     def import_finished(self):
@@ -313,6 +319,7 @@ class MainWindow(QMainWindow):
         self.demo_button.setEnabled(True)
         self.prior_button.setEnabled(self.store is not None or not task.error)
         self.report_button.setEnabled(self.prior_button.isEnabled())
+        self.quality_button.setEnabled(self.prior_button.isEnabled())
         self.switch_demo_button.setEnabled(True)
         task.deleteLater()
         if task.error:
@@ -320,6 +327,7 @@ class MainWindow(QMainWindow):
             return
         self.study, self.store, self.source_dir = task.study, task.store, task.directory
         self.pairing = Pairing(self.store)
+        self.quality = QualityReview(self.pairing)
         if task.demo_paths is not None:
             self.demo_paths = task.demo_paths
         demo_visit = self.demo_paths is not None and self.source_dir in self.demo_paths
@@ -345,6 +353,7 @@ class MainWindow(QMainWindow):
         self.correction.setText("衰减校正   " + correction)
         self.refresh_list()
         self.message.setText("检查已载入 · PET 与 CT 独立切层。在 PET 视口点种子，或从右侧选择已有病灶。")
+        self.record_checks("载入检查")
 
     def switch_demo(self):
         if self.demo_paths:
@@ -362,6 +371,7 @@ class MainWindow(QMainWindow):
                 self.tabs.setCurrentWidget(self.comparison)
                 self.refresh_comparison()
                 self.message.setText("已保存先验关联。" if prior_id else "当前检查已解除先验关联。")
+                self.record_checks("关联先验")
         except (ValueError, OSError) as exc:
             self.message.setText("关联未完成 · " + str(exc))
 
@@ -373,7 +383,8 @@ class MainWindow(QMainWindow):
             self.message.setText("请先保存 ROI 修改，再查看前后对照。")
             return
         try:
-            self.comparison.populate(*self.pairing.snapshot(), focused_id=self.lesion_id)
+            current, prior, skipped = self.pairing.quality_snapshot(strict=True)
+            self.comparison.populate(current, prior, focused_id=self.lesion_id, skipped=skipped)
         except (ValueError, OSError) as exc:
             self.comparison.clear(str(exc))
             self.message.setText("无法读取对照 · " + str(exc))
@@ -395,20 +406,51 @@ class MainWindow(QMainWindow):
                 self.pairing.unpair(current_id)
             elif operation == "new_track":
                 self.pairing.new_track(current_id)
+            elif operation in ("skip", "unskip"):
+                self.pairing.set_skip(current_id, operation == "skip")
             self.refresh_list()
-            self.message.setText("已保存跟踪关系；配对变更已留痕。")
+            self.message.setText("配对决定已保存并留痕。")
+            self.record_checks("病灶配对")
         except (ValueError, OSError) as exc:
             self.message.setText("配对未完成 · " + str(exc))
+
+    def record_checks(self, stage):
+        # A failed sidecar write must not report an already committed operation as failed.
+        try:
+            before = self.store.bundle
+            self.quality.capture(recheck=stage != "载入检查")
+            rows = self.quality.record(self.quality.saved_text(), stage=stage)
+            self.update_gate_count(rows)
+            if before is not self.store.bundle:
+                self.refresh_list()
+        except (OSError, ValueError) as exc:
+            self.quality_button.setText("质量门 · 待核对")
+            self.message.setText(f"{stage}已完成，质量门快照未更新 · {exc}")
+
+    def update_gate_count(self, rows):
+        count = sum(r["level"] in ("block", "review", "warn") for r in rows)
+        self.quality_button.setText(f"质量门 · {count}" if count else "质量门")
+
+    def open_quality(self):
+        try:
+            self.quality.capture()
+            text = self.quality.saved_text()
+            results = self.quality.record(text, stage="查看质量门")
+            self.update_gate_count(results)
+            self.refresh_list()
+            show_quality(self, results, self.store.exam_id, text_checked=text is not None)
+        except (OSError, ValueError) as exc:
+            self.message.setText("无法核对质量门 · " + str(exc))
 
     def open_report(self):
         if self.dirty:
             self.message.setText("请先保存 ROI 修改，再从已保存量测生成报告草稿。")
             return
         try:
-            dialog = ReportDialog(self, self.data_root, self.pairing.snapshot)
+            dialog = ReportDialog(self, self.data_root, self.quality.capture, gate_provider=self.quality.record)
             dialog.exec()
             dialog.deleteLater()
-            self.refresh_comparison()
+            self.refresh_list()
         except (ValueError, OSError) as exc:
             self.message.setText("无法打开报告草稿 · " + str(exc))
 
@@ -468,6 +510,7 @@ class MainWindow(QMainWindow):
                 return
             self.refresh_list()
             self.message.setText("人工修改已保存，可在「数值留痕」查看前值和修改依据。")
+            self.record_checks("人工改数")
 
     def view_history(self):
         lesion = self.selected_lesion()
@@ -638,6 +681,7 @@ class MainWindow(QMainWindow):
         self.show_audit(lesion, revision)
         state = self.measurements[self.lesion_id]["state"]
         self.message.setText(f"ROI 与量测已保存 · {label} · {state}")
+        self.record_checks("保存量测")
 
     def closeEvent(self, event):
         if self.import_task is not None:

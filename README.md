@@ -27,7 +27,7 @@ The name **DMT** must **not** be used to claim a multi-modality platform is alre
 | [Pack 02 导入、阅片与半自动 ROI](docs/packs/02-import-viewer-roi.md) | [本机启动与导入](#pack-02-本机启动与导入) · [桌面应用](apps/petfollow-lymphoma/) |
 | [Pack 03 SUVmax、CT 最长径与留痕](docs/packs/03-suvmax-diameter-audit.md) | [试算、改数与复核](#pack-03-量测与数值留痕) |
 | [Pack 04 先验配对 + 描述性报告草稿](docs/packs/04-prior-pairing-report-draft.md) | [关联、配对与导出步骤](#pack-04-关联上次与导出草稿) |
-| [Pack 05 质量门 + 全流程验收](docs/packs/05-quality-gate-acceptance.md) | **当前执行**：门控、`needs_review`、残留风险条件 |
+| [Pack 05 质量门与全流程验收](docs/packs/05-quality-gate-acceptance.md) | [人工验收清单](docs/ACCEPTANCE_MVP.md) · [残留风险条件](docs/RESIDUAL_RISK.md) |
 | [`docs/CODEX_BRIEF_PACK1.md`](docs/CODEX_BRIEF_PACK1.md) | Supplementary Pack 01 notes |
 | [`docs/UI_DIRECTION.md`](docs/UI_DIRECTION.md) | UI direction notes（以 UI_STYLE 为准） |
 
@@ -39,7 +39,7 @@ The name **DMT** must **not** be used to claim a multi-modality platform is alre
 | Pack 02 | [本地导入、双视口、可编辑 ROI](apps/petfollow-lymphoma/) | PASS（77881ed） |
 | Pack 03 | [SUVmax、CT 最长径估计、人工改数与数值留痕](docs/packs/03-suvmax-diameter-audit.md) | 已提交待人工验（509b771） |
 | Pack 04 | [先验配对与描述性报告草稿](docs/packs/04-prior-pairing-report-draft.md) | 已提交待人工验（2eed4a7） |
-| Pack 05 | [质量门 + 样例全流程验收](docs/packs/05-quality-gate-acceptance.md) | BRIEF 已提交，待 Codex |
+| Pack 05 | [本地质量门与示意全流程验收](docs/packs/05-quality-gate-acceptance.md) | 已提交待人工验 |
 
 ## Pack 02 本机启动与导入
 
@@ -81,13 +81,24 @@ py -3.13 -m venv .venv
 
 **本地存储。** 两次检查仍保存在各自的 `data/exams/<exam_id>.json`。本次检查用 `prior_exam_id` 引用先验，人工配对的两条病灶共享 `lesion_track_id`。配对审计单独写入 `data/pairings/<本次exam_id>.json`（版本 1），记录时间、操作者、两次检查及病灶标识和跟踪号变更。草稿保存在 `data/reports/<exam_id>.json`（版本 1），分别保存生成区快照和手写描述。示意 DICOM 目录为 `data/fixtures/petfollow-demo-v2-baseline/` 和 `data/fixtures/petfollow-demo-v2/`。
 
-**复验。** 在同一环境下运行工作站测试和数据契约测试。
+## Pack 05 质量门与验收
+
+用 `--demo` 载入示意检查，点顶栏「质量门」。列表按目标显示门控编号、级别、原因及动作。保存量测时核对衰减校正、SUV 换算依据、CT 对齐和 ROI 来源；失败的自动量测留空，待确认量测进入 `needs_review`。人工改数保留操作依据，程序不授予审核终态。
+
+选择先验时核对检查归属。先验失效会阻断导出，可通过「关联上次」重选或清除。未配对病灶默认在导出前提醒；操作者可在「前后对照」对该条点「跳过本次配对」，也可撤销跳过。缺原型声明或命中禁词时，草稿窗口以红色列出阻断原因，修正后再导出。所有规则只在本机运行。
+
+最新结构化快照在 `data/gates/<exam_id>.json`（版本 1）。`stage`、`checked_at` 和 `text_checked` 说明检查环节、时间及是否包含报告正文。顶栏查看的是已保存数据，报告窗口同时核对正在编辑的文字。导出时重新检查实际要写入的全文。门控快照不代替数值变更史或人工验收签字。
+
+对已经由人工接受或拒绝的历史记录，质量门重新核对当前来源。若核对失败，导出会被阻断，原数值与终态审计保留。
+
+**复验。** 在仓库根目录运行以下命令。第一条验示意全流程、未校正量测及先验失效后的阻断与修复。人工验收按[点击清单](docs/ACCEPTANCE_MVP.md)执行，逐项核对[六条残留风险条件](docs/RESIDUAL_RISK.md)。
 
 ```powershell
+.\.venv\Scripts\python.exe tests/test_acceptance_mvp.py -v
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 .\.venv\Scripts\python.exe schemas/v0/test_contract.py -v
 ```
 
 ## For Codex
 
-一次只做一个 pack。当前贴：[`docs/packs/05-quality-gate-acceptance.md`](docs/packs/05-quality-gate-acceptance.md) 文末「可复制提示词」。
+当前范围和人工验收条件见 [Pack 05 质量门与全流程验收](docs/packs/05-quality-gate-acceptance.md)。

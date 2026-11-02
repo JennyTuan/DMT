@@ -7,15 +7,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
+from quality_gate import eligible_prior, prior_gates
 from roi_store import (StudyStore, _StudyFiles, _local_path, _read_json, _safe_id,
                        _validate_bundle, _write_json, _writer_lock)
-
-
-def eligible_prior(current_exam, candidate_exam):
-    return (candidate_exam["patient_pseudo_id"] == current_exam["patient_pseudo_id"]
-            and candidate_exam["exam_id"] != current_exam["exam_id"]
-            and datetime.fromisoformat(candidate_exam["study_datetime"])
-            < datetime.fromisoformat(current_exam["study_datetime"]))
 
 
 def _audit_path(root, exam_id):
@@ -31,10 +25,25 @@ def _read_audit(root, exam_id):
             or not isinstance(audit.get("revision"), str) or not isinstance(audit.get("events"), list)
             or any(not isinstance(e, dict) or e.get("current_exam_id") != exam_id
                    or e.get("actor") not in ("user", "system")
-                   or e.get("action") not in ("set_prior", "pair", "unpair", "new_track", "existing_track")
+                   or e.get("action") not in ("set_prior", "pair", "unpair", "new_track", "existing_track",
+                                              "skip_track", "unskip_track")
                    for e in audit["events"])):
         raise ValueError("配对留痕文件无法读取，请核对数据目录")
     return audit
+
+
+def _skipped(events, prior_id):
+    skipped = set()
+    for event in events:
+        if event["action"] == "set_prior" and event.get("previous_prior_exam_id") != event["prior_exam_id"]:
+            skipped.clear()
+        elif event["prior_exam_id"] == prior_id:
+            lesion_id = event["current_lesion_id"]
+            if event["action"] == "skip_track":
+                skipped.add(lesion_id)
+            elif event["action"] in ("unskip_track", "pair", "unpair", "new_track", "existing_track"):
+                skipped.discard(lesion_id)
+    return skipped
 
 
 def _restore(root, journal, *, exams_locked=False):
@@ -150,23 +159,39 @@ class Pairing:
             exams = [b["exam"] for b in bundles.values() if eligible_prior(current, b["exam"])]
             return sorted(exams, key=lambda e: datetime.fromisoformat(e["study_datetime"]), reverse=True)
 
-    def snapshot(self):
+    def quality_snapshot(self, *, strict=False):
+        """Only supply verified prior data. An unresolved prior ID remains in current for the gate."""
         with self.store._writing():
             current = deepcopy(self.store.bundle)
-            _by_track(current)
+            if strict:
+                _by_track(current)
             prior_id = current["exam"]["prior_exam_id"]
             prior = None
-            if prior_id is not None:
-                if prior_id == self.store.exam_id:
-                    raise ValueError("不能将本次检查作为先验")
-                files = _StudyFiles(self.store.root, prior_id)
-                with _writer_lock(files.lock_path):
-                    prior = _read_bundle(files)
-                if not eligible_prior(current["exam"], prior["exam"]):
-                    raise ValueError("先验必须是同一患者较早的检查，请重新关联上次")
-                _by_track(prior)
-            self._seen_prior = deepcopy(prior)
-            return current, prior
+            if prior_id is not None and prior_id != self.store.exam_id:
+                try:
+                    files = _StudyFiles(self.store.root, prior_id)
+                except ValueError:
+                    files = None
+                if files is not None and files.path.is_file():
+                    with _writer_lock(files.lock_path):
+                        try:
+                            candidate = _read_bundle(files)
+                        except ValueError:
+                            candidate = None
+                    if candidate and eligible_prior(current["exam"], candidate["exam"]):
+                        if strict:
+                            _by_track(candidate)
+                        prior = candidate
+            if strict and prior_id is not None and prior is None:
+                raise ValueError("PRIOR_BROKEN · 请重新关联同一患者较早的检查")
+            if strict:
+                self._seen_prior = deepcopy(prior)
+            events = _read_audit(self.store.root, self.store.exam_id)["events"]
+            return current, prior, _skipped(events, prior_id)
+
+    def snapshot(self):
+        current, prior, _ = self.quality_snapshot(strict=True)
+        return current, prior
 
     def prior_bundle(self):
         return self.snapshot()[1]
@@ -180,7 +205,7 @@ class Pairing:
         return any(e["action"] == "set_prior" for e in audit["events"])
 
     @contextmanager
-    def _edit(self):
+    def _edit(self, *, repair_prior=False):
         with self._patient_bundles() as original:
             current_id = self.store.exam_id
             current = deepcopy(original[current_id])
@@ -188,7 +213,7 @@ class Pairing:
             prior = original.get(prior_id)
             if prior and not eligible_prior(current["exam"], prior["exam"]):
                 prior = None
-            if self._seen_prior is not None and self._seen_prior != prior:
+            if self._seen_prior is not None and self._seen_prior != prior and not (repair_prior and prior is None):
                 raise ValueError("先验检查已更新，请重新打开或刷新后再配对")
             prior = deepcopy(prior)
             events = []
@@ -238,12 +263,14 @@ class Pairing:
         self._select_prior(_safe_id(baseline_id), demo=True)
 
     def _select_prior(self, exam_id, *, demo):
-        with self._edit() as (current, prior, bundles, events):
+        with self._edit(repair_prior=True) as (current, prior, bundles, events):
             candidate = None
             if exam_id is not None:
                 candidate = bundles.get(_safe_id(exam_id))
-                if candidate is None or not eligible_prior(current["exam"], candidate["exam"]):
-                    raise ValueError("请选择同一患者较早的既有检查")
+            proposed = {**current, "exam": {**current["exam"], "prior_exam_id": exam_id}}
+            for result in prior_gates(proposed, candidate):
+                if result["level"] == "block":
+                    raise ValueError(f"{result['gate_id']} · {result['message']}")
             previous = current["exam"]["prior_exam_id"]
             if demo:
                 if not (current["exam"].get("is_synthetic") and candidate["exam"].get("is_synthetic")):
@@ -265,6 +292,18 @@ class Pairing:
                                              track, track, actor=actor))
             current["exam"]["prior_exam_id"] = exam_id
             events.append(_event("set_prior", current, exam_id, previous_prior_exam_id=previous, actor=actor))
+
+    def set_skip(self, lesion_id, skip):
+        with self._edit() as (current, prior, _, events):
+            if prior is None:
+                raise ValueError("请先关联有效的上次检查")
+            lesion = _lesion(current, lesion_id)
+            if _track(lesion) in _by_track(prior):
+                raise ValueError("已配对病灶不需要跳过")
+            prior_id = prior["exam"]["exam_id"]
+            history = _read_audit(self.store.root, self.store.exam_id)["events"]
+            if (lesion_id in _skipped(history, prior_id)) != skip:
+                events.append(_event("skip_track" if skip else "unskip_track", current, prior_id, lesion))
 
     def pair(self, current_lesion_id, prior_lesion_id):
         with self._edit() as (current, prior, _, events):

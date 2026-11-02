@@ -1,29 +1,32 @@
 """Lesion comparisons and version 1 local descriptive report drafts."""
 
 import json
-import re
 from collections import Counter, defaultdict
 from html import escape
 from pathlib import Path
 
-from pairing import eligible_prior
+from quality_gate import BANNER, contains_banned_term, eligible_prior, evaluate_bundle, report_gates
 from roi_store import _local_path, _safe_id, _write_json, _writer_lock
 
 
-BANNER = "原型·不可用于临床诊疗决策"
+def gate_line(result):
+    target = result["target_id"]
+    if contains_banned_term(target):
+        target = "当前条目"
+    return f"{result['gate_id']} · {target}　{result['message']}。{result['action']}"
 
 
-def _require_descriptive(text):
-    # Apply the pack's explicit output exclusions to free text as well as imported labels.
-    if re.search(r"Deauville|Lugano|(?<![a-z])(?:CMR|PMR|NMR|PMD)(?![a-z])|缓解|恶性|辅助诊断|疗效结论",
-                 text, re.IGNORECASE):
-        raise ValueError("本草稿仅保存描述性内容。请核对病灶部位和手写描述后再试。")
+def _require_unblocked(results):
+    blockers = [gate_line(row) for row in results if row["level"] == "block"]
+    if blockers:
+        raise ValueError("\n".join(blockers))
 
 
 def _linked_prior(current, prior):
     exam = current["exam"]
-    if (prior is not None and exam.get("prior_exam_id") == prior["exam"]["exam_id"]
-            and eligible_prior(exam, prior["exam"])):
+    candidate = (prior or {}).get("exam") or {}
+    if (exam.get("prior_exam_id") and exam["prior_exam_id"] == candidate.get("exam_id")
+            and eligible_prior(exam, candidate)):
         return prior
     return None
 
@@ -100,7 +103,7 @@ def _table_row(*cells):
     return "| " + " | ".join(cells) + " |"
 
 
-def generated_section(current, prior):
+def _format_section(current, prior):
     """A markdown snapshot; each side uses the same comparisons shown by the workstation."""
     exam = current["exam"]
     prior = _linked_prior(current, prior)
@@ -124,9 +127,6 @@ def generated_section(current, prior):
     ])
     rows = comparison_rows(current, prior)
     for row in rows:
-        _require_descriptive(row["label"])
-        if row["prior_label"]:
-            _require_descriptive(row["prior_label"])
         label = _cell(row["label"])
         if row["lesion_id"] is None:
             label += "（仅先验条目）"
@@ -143,17 +143,29 @@ def generated_section(current, prior):
     return "\n".join(lines)
 
 
+def generated_section(current, prior):
+    text = _format_section(current, prior)
+    _require_unblocked(evaluate_bundle(current, prior, text=text))
+    return text
+
+
+def report_text(generated, description):
+    return generated + "\n\n## 描述\n\n" + description + "\n"
+
+
 class ReportDraft:
     """The generated snapshot and the author's plain text have separate lifetimes."""
 
-    def __init__(self, root, current, prior):
+    def __init__(self, root, current, prior, *, gate_provider=None):
         self.exam_id = _safe_id(current["exam"]["exam_id"])
         self.root = Path(root).resolve()
         self.path = _local_path(self.root, Path("data/reports") / (self.exam_id + ".json"))
+        self._gate_provider = gate_provider
         self._saved = self._read_saved()
-        self.generated = self._saved["generated"] if self._saved else generated_section(current, prior)
+        self.generated = self._saved["generated"] if self._saved else _format_section(current, prior)
         self.description = self._saved["description"] if self._saved else ""
         self._clean = self._payload()
+        self._evaluate(current, prior, self.render_text())
 
     def _payload(self):
         return {"version": 1, "exam_id": self.exam_id,
@@ -167,7 +179,7 @@ class ReportDraft:
         except ValueError as exc:
             raise ValueError("草稿文件无法读取，请核对已保存的文件") from exc
         if (not isinstance(saved, dict) or saved.get("version") != 1 or saved.get("exam_id") != self.exam_id
-                or not isinstance(saved.get("generated"), str) or not saved["generated"].startswith(BANNER + "\n")
+                or not isinstance(saved.get("generated"), str)
                 or not isinstance(saved.get("description"), str)):
             raise ValueError("草稿格式、版本或检查 ID 不符，请核对已保存的文件")
         return saved
@@ -176,18 +188,48 @@ class ReportDraft:
     def dirty(self):
         return self._payload() != self._clean
 
-    def _current_section(self, current, prior):
+    def render_text(self, *, generated=None):
+        section = self.generated if generated is None else generated
+        return report_text(section, self.description)
+
+    def _evaluate(self, current, prior, text):
         if current["exam"]["exam_id"] != self.exam_id:
             raise ValueError("当前检查已切换，请重新打开对应的草稿")
-        return generated_section(current, prior)
+        self._checked_bundle = current
+        local = evaluate_bundle(current, prior, text=text)
+        self.gate_results = local
+        if self._gate_provider is None:
+            return
+        # The provider adds ROI evidence and explicit skips. Its results cannot
+        # waive a blocker on the actual bundles and text used by this draft.
+        results = {(r["gate_id"], r["target_id"]): r for r in self._gate_provider(text)}
+        for row in local:
+            if row["level"] == "block":
+                results[row["gate_id"], row["target_id"]] = row
+        self.gate_results = list(results.values())
+
+    def refresh_text_gates(self):
+        """Live editing uses the last checked exam without reading any study files."""
+        checked = report_gates(self._checked_bundle, self.render_text())
+        replaced = {r["gate_id"] for r in checked}
+        self.gate_results = [r for r in self.gate_results if r["gate_id"] not in replaced] + checked
 
     def regenerate(self, current, prior):
-        self.generated = self._current_section(current, prior)
+        generated = _format_section(current, prior)
+        self._evaluate(current, prior, self.render_text(generated=generated))
+        _require_unblocked(self.gate_results)
+        self.generated = generated
+
+    def check_fresh(self, current, prior):
+        if self.generated != _format_section(current, prior):
+            raise ValueError("检查、配对或量测已更新，请先从当前量测重新生成")
 
     def check_current(self, current, prior):
-        _require_descriptive(self.description)
-        if self.generated != self._current_section(current, prior):
-            raise ValueError("检查、配对或量测已更新，请先从当前量测重新生成")
+        text = self.render_text()
+        self._evaluate(current, prior, text)
+        _require_unblocked(self.gate_results)
+        self.check_fresh(current, prior)
+        return text
 
     def save(self, current, prior):
         self.check_current(current, prior)
@@ -201,17 +243,17 @@ class ReportDraft:
         self._saved = self._clean = payload
 
     def export(self, path, current, prior):
-        self.check_current(current, prior)
+        contents = self.check_current(current, prior).encode("utf-8")
         path = Path(path)
         if path.suffix.lower() != ".md":
             raise ValueError("请选择扩展名为 .md 的新文件")
         try:
-            stream = path.open("x", encoding="utf-8", newline="\n")
+            stream = path.open("xb")
         except FileExistsError as exc:
             raise ValueError("该文件已经存在，请为此次导出选择新文件名") from exc
         try:
             with stream:
-                stream.write(self.generated + "\n\n## 描述\n\n" + self.description + "\n")
+                stream.write(contents)
         except OSError:
             path.unlink(missing_ok=True)
             raise
