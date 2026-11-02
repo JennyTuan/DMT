@@ -1,6 +1,10 @@
 # CODEX BRIEF — DMT / petfollow-lymphoma
 
 > 受众：本机 Codex。只实现本文与当前 `docs/packs/0N-*.md` 写明的范围。超出即失败。
+>
+> **命名写死**：`DMT` 仅为 Git 仓/伞名；本仓第一刀产品与界面必须是 **淋巴瘤 PET 随访原型**（模块代号 `petfollow-lymphoma`）。禁止借 DMT 扩成多模态诊断平台。
+>
+> **UI**：见 [`docs/UI_STYLE.md`](UI_STYLE.md)。Pack 01 不实现界面；自界面包起强制遵守。
 
 ## 1. 目标（两周院内试用）
 
