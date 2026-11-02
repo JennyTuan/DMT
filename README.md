@@ -1,23 +1,34 @@
 # DMT
 
-独立新仓。第一刀交付：**淋巴瘤 PET-CT 治疗后代谢随访**院内试用原型（非注册、非多模态诊断平台）。
+**DMT** is the umbrella repository for a multimodal *follow-up* product line.  
+**First module only (this sprint):** `petfollow-lymphoma` — lymphoma post-treatment **PET-CT metabolic follow-up**, hospital in-trial / research **prototype**.
 
-- 口头名：淋巴瘤 PET 随访原型
-- 模块代号：`petfollow-lymphoma`（本仓内目录/命名空间；不继承其他仓库）
-- 约束：本机 RTX 3060；开源优先；每屏常驻「原型·不可用于临床诊疗决策」
+> **原型·不可用于临床诊疗决策**  
+> Prototype — not for clinical diagnosis or treatment decisions.
 
-## 给 Codex
+## What this is / is not
 
-1. 读 [`docs/CODEX_BRIEF.md`](docs/CODEX_BRIEF.md)
-2. **Pack 01 数据契约已入库**（`schemas/v0/`）。请先按 [`docs/packs/01-data-contract.md`](docs/packs/01-data-contract.md) 的 checklist **校验/补洞**，不要另起一套字段
-3. 验过后等 Pack 02 BRIEF（导入+阅片壳+ROI）
-4. 不要扩多癌种 / Deauville·Lugano / 恶性判定 / 真实注册材料
+| Is | Is not |
+| --- | --- |
+| Independent clean repo for the lymphoma PET follow-up prototype | A shipped multi-modality “AI platform” |
+| Schema-first packs toward a runnable in-trial demo | Real NMPA Class III registration package |
+| Editable SUVmax + CT longest-diameter follow-up with audit trail (later packs) | Auto Deauville / Lugano / malignancy / response conclusions |
 
-## 状态
+The name **DMT** must **not** be used to claim a multi-modality platform is already productized. Later modalities get their own modules and briefs.
 
-| 包 | 内容 | 状态 |
-| --- | --- | --- |
-| 01 | 数据契约（Exam / Lesion / Measurement / proposed 状态机） | **已推送·待 Codex 校验 + 人工验** |
-| 02 | 导入 + PET/CT 阅片壳 + 半自动 ROI | 未开 |
-| 03 | SUVmax + CT 最长径 + 可改留痕 | 未开 |
-| 04 | 先验配对 + 描述性报告草稿 + 质量门 | 未开 |
+## Docs
+
+| Doc | Purpose |
+| --- | --- |
+| [`docs/LOCK.md`](docs/LOCK.md) | Product lock: build / don’t build / bans |
+| [`docs/CODEX_BRIEF_PACK1.md`](docs/CODEX_BRIEF_PACK1.md) | **Pack1** Codex brief — data contracts + state machine |
+| [`docs/UI_DIRECTION.md`](docs/UI_DIRECTION.md) | UI direction for later packs (domestic clinical workstation density; no vendor clone) |
+
+## Pack status
+
+- **Pack1 (current):** JSON data contracts, `ProposedState` machine, fixtures, unit tests — **no UI**
+- Later: ROI → SUVmax / longest diameter → prior linking → descriptive report draft → quality gates
+
+## For Codex
+
+Paste the prompt block at the bottom of `docs/CODEX_BRIEF_PACK1.md` into Codex on a machine with this repo cloned. Do not expand scope past Pack1.
