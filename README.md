@@ -27,6 +27,7 @@ The name **DMT** must **not** be used to claim a multi-modality platform is alre
 | [Pack 02 导入、阅片与半自动 ROI](docs/packs/02-import-viewer-roi.md) | [本机启动与导入](#pack-02-本机启动与导入) · [桌面应用](apps/petfollow-lymphoma/) |
 | [Pack 03 SUVmax、CT 最长径与留痕](docs/packs/03-suvmax-diameter-audit.md) | [试算、改数与复核](#pack-03-量测与数值留痕) |
 | [Pack 04 先验配对 + 描述性报告草稿](docs/packs/04-prior-pairing-report-draft.md) | [关联、配对与导出步骤](#pack-04-关联上次与导出草稿) |
+| [Pack 05 质量门 + 全流程验收](docs/packs/05-quality-gate-acceptance.md) | **当前执行**：门控、`needs_review`、残留风险条件 |
 | [`docs/CODEX_BRIEF_PACK1.md`](docs/CODEX_BRIEF_PACK1.md) | Supplementary Pack 01 notes |
 | [`docs/UI_DIRECTION.md`](docs/UI_DIRECTION.md) | UI direction notes（以 UI_STYLE 为准） |
 
@@ -37,9 +38,8 @@ The name **DMT** must **not** be used to claim a multi-modality platform is alre
 | Pack 01 | [检查、病灶、量测、状态机及配对示例](schemas/v0/README.md) | PASS（f5a13ab） |
 | Pack 02 | [本地导入、双视口、可编辑 ROI](apps/petfollow-lymphoma/) | PASS（77881ed） |
 | Pack 03 | [SUVmax、CT 最长径估计、人工改数与数值留痕](docs/packs/03-suvmax-diameter-audit.md) | 已提交待人工验（509b771） |
-| Pack 04 | [先验配对与描述性报告草稿](docs/packs/04-prior-pairing-report-draft.md) | 已提交待人工验 |
-
-Later: 质量门
+| Pack 04 | [先验配对与描述性报告草稿](docs/packs/04-prior-pairing-report-draft.md) | 已提交待人工验（2eed4a7） |
+| Pack 05 | [质量门 + 样例全流程验收](docs/packs/05-quality-gate-acceptance.md) | BRIEF 已提交，待 Codex |
 
 ## Pack 02 本机启动与导入
 
@@ -90,4 +90,4 @@ py -3.13 -m venv .venv
 
 ## For Codex
 
-当前执行范围与人工验收清单见 [Pack 04 先验配对与描述性报告草稿](docs/packs/04-prior-pairing-report-draft.md)。
+一次只做一个 pack。当前贴：[`docs/packs/05-quality-gate-acceptance.md`](docs/packs/05-quality-gate-acceptance.md) 文末「可复制提示词」。
