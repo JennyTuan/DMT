@@ -19,6 +19,8 @@ QLabel#modalityTag {
 QFrame#contextBar { border-bottom: 1px solid #3a4247; }
 QLabel#contextValue, QLabel#numeric { color: #d4dfe0; }
 QLabel#synthetic { color: #edd49e; background: #423823; padding: 2px 8px; }
+QLabel#reviewReason { color: #f1d19a; background: #3d3528; padding: 5px 7px; }
+QLabel#dialogBanner { color: #272014; background: #e0b771; padding: 4px 8px; }
 QLabel#muted, QLabel#field { color: #a5b1b8; background: transparent; font-size: 12px; }
 QFrame#sidebar { background: #20262b; }
 QLabel#section { background: transparent; font-weight: 600; font-size: 15px; }

@@ -6,12 +6,12 @@ from tempfile import TemporaryDirectory
 from uuid import NAMESPACE_URL, uuid5
 
 import numpy as np
-from pydicom.dataset import FileDataset, FileMetaDataset
+from pydicom.dataset import Dataset, FileDataset, FileMetaDataset
 from pydicom.uid import CTImageStorage, ExplicitVRLittleEndian, PositronEmissionTomographyImageStorage
 
 
-def _uid(name):
-    return f"2.25.{uuid5(NAMESPACE_URL, 'petfollow-lymphoma/demo-v1/' + name).int}"
+def _uid(name, version):
+    return f"2.25.{uuid5(NAMESPACE_URL, f'petfollow-lymphoma/{version}/{name}').int}"
 
 
 def _phantom(modality, size, z, rng):
@@ -31,7 +31,7 @@ def _phantom(modality, size, z, rng):
     focus = ellipse(0.088, -0.057, 0.056, 0.050) + (z / 0.45) ** 2
 
     if modality == "PT":
-        # All intensities are arbitrary synthetic counts, independent of dose.
+        # A deterministic synthetic spatial pattern shared by both demo versions.
         sigmoid = lambda distance: 1 / (1 + np.exp(np.clip(15 * (distance - 1), -40, 40)))
         tissue = sigmoid(body)
         lungs = sigmoid(np.minimum(left, right)) * (1 - sigmoid(heart))
@@ -75,16 +75,17 @@ def _phantom(modality, size, z, rng):
     return np.rint(values).astype("<i2")
 
 
-def _instance(modality, index, count, size, spacing):
+def _instance(modality, index, count, size, spacing, quantitative):
     name = f"{modality}/{index + 1:03d}"
     meta = FileMetaDataset()
     meta.TransferSyntaxUID = ExplicitVRLittleEndian
     ds = FileDataset(None, {}, preamble=b"\0" * 128, file_meta=meta)
     ds.SOPClassUID = PositronEmissionTomographyImageStorage if modality == "PT" else CTImageStorage
-    ds.SOPInstanceUID = _uid(name)
-    ds.SeriesInstanceUID = _uid(modality)
-    ds.StudyInstanceUID = _uid("study")
-    ds.FrameOfReferenceUID = _uid("frame")
+    version = "demo-v2" if quantitative else "demo-v1"
+    ds.SOPInstanceUID = _uid(name, version)
+    ds.SeriesInstanceUID = _uid(modality, version)
+    ds.StudyInstanceUID = _uid("study", version)
+    ds.FrameOfReferenceUID = _uid("frame", version)
     ds.Modality = modality
     ds.ImageType = ["DERIVED", "SECONDARY"]
     ds.add_new(0x0008001C, "CS", "YES")  # Synthetic Data
@@ -107,6 +108,21 @@ def _instance(modality, index, count, size, spacing):
     if modality == "PT":
         ds.CorrectedImage = ["ATTN"]
         ds.Units = "CNTS"
+        if quantitative:
+            # v2 models a synthetic activity concentration, 8 Bq/ml per step.
+            ds.Units, ds.RescaleSlope = "BQML", 8
+            ds.CorrectedImage = ["ATTN", "DECY"]
+            ds.DecayCorrection = "START"
+            ds.SeriesType = ["STATIC", "IMAGE"]
+            ds.SeriesDate = ds.AcquisitionDate = ds.StudyDate
+            ds.SeriesTime = ds.AcquisitionTime = "091500"
+            ds.PatientWeight = 70
+            tracer = Dataset()
+            tracer.Radiopharmaceutical = "Synthetic FDG"
+            tracer.RadiopharmaceuticalStartDateTime = "20260110081500+0800"
+            tracer.RadionuclideTotalDose = 200_000_000
+            tracer.RadionuclideHalfLife = 6586.2
+            ds.RadiopharmaceuticalInformationSequence = [tracer]
     rng = np.random.default_rng(401 + index + 100 * int(ds.SeriesNumber))
     ds.PixelData = _phantom(modality, size, z, rng).tobytes()
     out = BytesIO()
@@ -114,18 +130,18 @@ def _instance(modality, index, count, size, spacing):
     return out.getvalue()
 
 
-def make_demo(directory: Path):
+def make_demo(directory: Path, *, quantitative=False):
     """Publish an entire series pair together. Never replace unrelated files."""
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
-    output = directory / "petfollow-demo-v1"
+    output = directory / ("petfollow-demo-v2" if quantitative else "petfollow-demo-v1")
     with TemporaryDirectory(dir=directory) as scratch:
         staged = Path(scratch) / output.name
         for modality, count, size, spacing in [("PT", 21, 192, 2), ("CT", 31, 256, 1.5)]:
             (staged / modality).mkdir(parents=True)
             for index in range(count):
                 filename = staged / modality / f"{index + 1:03d}.dcm"
-                filename.write_bytes(_instance(modality, index, count, size, spacing))
+                filename.write_bytes(_instance(modality, index, count, size, spacing, quantitative))
         if not output.exists():
             try:
                 staged.rename(output)
@@ -141,6 +157,7 @@ def make_demo(directory: Path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output_dir", type=Path)
+    parser.add_argument("--quantitative", action="store_true", help="生成含合成定量参数的 v2 示意检查")
     args = parser.parse_args()
-    make_demo(args.output_dir)
+    make_demo(args.output_dir, quantitative=args.quantitative)
     print(f"示意数据 · PET 21 层 / CT 31 层 · {args.output_dir.resolve()}")

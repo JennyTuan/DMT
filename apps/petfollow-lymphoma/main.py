@@ -3,6 +3,7 @@
 import argparse
 import sys
 from datetime import datetime
+from functools import partial
 from pathlib import Path
 
 import numpy as np
@@ -13,8 +14,11 @@ from PySide6.QtWidgets import (
     QSplitter, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget,
 )
 
+from diameter import diameter_for_roi
 from imaging import load_study
+from measurement_ui import FIELDS, display_value, edit_value_dialog, show_history
 from roi_store import StudyStore, grow_region
+from suv import suv_for_roi
 from viewport import SliceView
 
 APP_DIR = Path(__file__).resolve().parent
@@ -24,6 +28,20 @@ from fixtures.make_demo import make_demo
 
 TITLE = "淋巴瘤 PET 随访原型"
 BANNER = "原型·不可用于临床诊疗决策"
+
+
+def check_roi_source(study, mask, slice_index, sop_uid):
+    if (not 0 <= slice_index < len(study.pet_uids) or study.pet_uids[slice_index] != sop_uid
+            or mask.shape != study.pet[slice_index].shape):
+        raise ValueError("ROI 与本次载入的 PET 实例或图像尺寸不符")
+
+
+def measure_roi(study, mask, slice_index, sop_uid):
+    check_roi_source(study, mask, slice_index, sop_uid)
+    suv, suv_note = suv_for_roi(study, mask, slice_index)
+    diameter, diameter_note = diameter_for_roi(study, mask, slice_index)
+    return ({"suv_max": suv, "longest_diameter_mm": diameter},
+            {"suv_max": suv_note, "longest_diameter_mm": diameter_note})
 
 
 class ImportTask(QThread):
@@ -37,11 +55,11 @@ class ImportTask(QThread):
         try:
             if self.directory is None:
                 fixtures = self.root / "data" / "fixtures"
-                self.directory = fixtures / "petfollow-demo-v1"
+                self.directory = fixtures / "petfollow-demo-v2"
                 if not self.directory.exists():
-                    make_demo(fixtures)
+                    make_demo(fixtures, quantitative=True)
             self.study = load_study(self.directory)
-            self.store = StudyStore(self.root, self.study.exam)
+            self.store = StudyStore(self.root, self.study.exam, measure=partial(measure_roi, self.study))
         except Exception as exc:
             self.error = str(exc) or type(exc).__name__
 
@@ -67,6 +85,7 @@ class MainWindow(QMainWindow):
         self.data_root = Path(data_root)
         self.source_dir = self.study = self.store = self.import_task = None
         self.mask = self.seed = self.roi_slice = self.lesion_id = None
+        self.measurements = {}
         self.dirty = self.edited = False
         self.setWindowTitle(TITLE)
         self.resize(1380, 800)
@@ -125,7 +144,7 @@ class MainWindow(QMainWindow):
         self.workspace.addWidget(self.build_sidebar())
         self.workspace.setStretchFactor(0, 1)
         self.workspace.setStretchFactor(1, 1)
-        self.workspace.setSizes([510, 510, 300])
+        self.workspace.setSizes([480, 480, 370])
         shell.addWidget(self.workspace, 1)
         self.message = caption("选择含同次 PET 和 CT 的目录，或载入示意数据。", "footer")
         self.message.setWordWrap(True)
@@ -137,8 +156,8 @@ class MainWindow(QMainWindow):
 
     def build_sidebar(self):
         side = QFrame(objectName="sidebar")
-        side.setMinimumWidth(262)
-        side.setMaximumWidth(380)
+        side.setMinimumWidth(312)
+        side.setMaximumWidth(470)
         layout = QVBoxLayout(side)
         layout.setContentsMargins(12, 11, 12, 10)
         layout.setSpacing(8)
@@ -149,8 +168,8 @@ class MainWindow(QMainWindow):
         heading.addStretch()
         heading.addWidget(self.new_button)
         layout.addLayout(heading)
-        self.table = QTableWidget(0, 3)
-        self.table.setHorizontalHeaderLabels(["序号", "部位", "状态"])
+        self.table = QTableWidget(0, 4)
+        self.table.setHorizontalHeaderLabels(["部位", "SUVmax", "最长径 mm", "量测状态"])
         self.table.verticalHeader().hide()
         self.table.verticalHeader().setDefaultSectionSize(27)
         self.table.setShowGrid(False)
@@ -159,9 +178,21 @@ class MainWindow(QMainWindow):
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.table.itemSelectionChanged.connect(self.select_lesion)
+        self.table.cellActivated.connect(self.edit_measurement)
         layout.addWidget(self.table, 1)
+        tools = row(caption("双击量测数值可修改", "muted"))
+        tools.addStretch()
+        self.history_button = QPushButton("数值留痕")
+        self.history_button.setEnabled(False)
+        self.history_button.clicked.connect(self.view_history)
+        tools.addWidget(self.history_button)
+        layout.addLayout(tools)
+        self.review_reason = caption("", "reviewReason")
+        self.review_reason.setWordWrap(True)
+        self.review_reason.hide()
+        layout.addWidget(self.review_reason)
 
         layout.addWidget(caption("ROI 工具", "section"))
         self.label_edit = QLineEdit()
@@ -198,7 +229,6 @@ class MainWindow(QMainWindow):
         metrics = QFrame(objectName="metrics")
         fields = QVBoxLayout(metrics)
         fields.setContentsMargins(9, 6, 9, 6)
-        fields.addWidget(caption("SUVmax    —       最长径    — mm", "numeric"))
         self.audit_info = caption("尚无已保存的 ROI", "muted")
         self.audit_info.setWordWrap(True)
         fields.addWidget(self.audit_info)
@@ -253,23 +283,75 @@ class MainWindow(QMainWindow):
         self.exam_info.setToolTip(f"{patient_code}\n{exam['exam_id']}")
         correction = self.study.correction_label
         if not exam["attenuation_corrected"]:
-            correction += " · 后续量测需复核（needs_review）"
+            correction += " · 量测需复核"
         self.correction.setText("衰减校正   " + correction)
         self.refresh_list()
         self.message.setText("检查已载入 · PET 与 CT 独立切层。在 PET 视口点种子，或从右侧选择已有病灶。")
 
     def refresh_list(self):
         lesions = self.store.bundle["lesions"]
+        self.measurements = {m["lesion_id"]: m for m in self.store.bundle["measurements"]}
         with QSignalBlocker(self.table):
             self.table.setRowCount(len(lesions))
             for index, lesion in enumerate(lesions):
-                values = (f"{index + 1:02}", lesion["label"], lesion["status"])
+                measurement = self.measurements.get(lesion["lesion_id"])
+                state = measurement["state"] if measurement else "—"
+                status = {"proposed": "待确认", "needs_review": "需复核"}.get(state, state)
+                numbers = [display_value(measurement[field] if measurement else None) for field in FIELDS]
+                values = [lesion["label"], *numbers, status]
                 for col, value in enumerate(values):
-                    self.table.setItem(index, col, QTableWidgetItem(value))
+                    item = QTableWidgetItem(value)
+                    item.setToolTip(value)
+                    if col in (1, 2):
+                        item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+                        number = measurement[FIELDS[col - 1]] if measurement else None
+                        item.setToolTip(f"{number if number is not None else '未测'} · 双击修改")
+                    if col == 3 and measurement:
+                        note = measurement["audit"][-1]["note"] if measurement["audit"] else ""
+                        item.setToolTip(f"{state} · {note}")
+                    self.table.setItem(index, col, item)
                 if self.lesion_id == lesion["lesion_id"]:
                     self.table.selectRow(index)
         self.count.setText(f"{len(lesions):02}")
+        self.update_measurement_details()
         self.update_controls()
+
+    def selected_lesion(self):
+        row_index = self.table.currentRow()
+        if self.store and row_index >= 0 and self.table.selectedItems():
+            return self.store.bundle["lesions"][row_index]
+        return None
+
+    def edit_measurement(self, index, column):
+        lesion = self.selected_lesion()
+        if column not in (1, 2) or not lesion or index != self.table.currentRow():
+            return
+        if self.dirty:
+            self.message.setText("请先保存 ROI 修改，再编辑该版本的量测数值。")
+            return
+        measurement = self.measurements.get(lesion["lesion_id"])
+        if not measurement or measurement["state"] not in ("proposed", "needs_review"):
+            self.message.setText("当前量测状态不允许改数。")
+            return
+        field = FIELDS[column - 1]
+        change = edit_value_dialog(self, lesion["label"], field, measurement[field])
+        if change is not None:
+            try:
+                self.store.edit_value(lesion["lesion_id"], field, *change)
+            except (ValueError, OSError) as exc:
+                self.message.setText("改数失败 · " + str(exc))
+                return
+            self.refresh_list()
+            self.message.setText("人工修改已保存，可在「数值留痕」查看前值和修改依据。")
+
+    def view_history(self):
+        lesion = self.selected_lesion()
+        if lesion:
+            try:
+                events = self.store.value_history(lesion["lesion_id"])
+                show_history(self, lesion["label"], events)
+            except (ValueError, OSError) as exc:
+                self.message.setText("读取数值留痕失败 · " + str(exc))
 
     def clear_editor(self):
         self.lesion_id = self.mask = self.roi_slice = self.seed = None
@@ -280,6 +362,7 @@ class MainWindow(QMainWindow):
         self.pet.set_mask(None)
         with QSignalBlocker(self.table):
             self.table.clearSelection()
+        self.update_measurement_details()
         self.update_controls()
 
     def new_lesion(self):
@@ -300,12 +383,15 @@ class MainWindow(QMainWindow):
             try:
                 mask, meta = self.store.load_roi(lesion["lesion_id"])
                 layer = meta["slice_index"]
-                if (not 0 <= layer < len(self.study.pet_uids)
-                        or self.study.pet_uids[layer] != meta["sop_uid"]
-                        or mask.shape != self.study.pet[layer].shape):
-                    raise ValueError("已保存的 ROI 与当前 PET 层面不匹配")
+                check_roi_source(self.study, mask, layer, meta["sop_uid"])
             except (ValueError, KeyError, OSError) as exc:
+                self.clear_editor()
+                with QSignalBlocker(self.table):
+                    self.table.selectRow(index)
+                self.update_measurement_details()
+                self.update_controls()
                 self.message.setText("无法打开 ROI · " + str(exc))
+                return
             else:
                 self.lesion_id, self.mask, self.roi_slice = lesion["lesion_id"], mask, layer
                 self.seed = tuple(meta["seed"])
@@ -316,6 +402,7 @@ class MainWindow(QMainWindow):
                 self.pet.set_index(layer)
                 self.show_outline()
                 self.show_audit(lesion, meta)
+                self.update_measurement_details()
                 self.update_controls()
                 self.message.setText(f"已定位病灶 · PET 第 {layer + 1} 层")
                 return
@@ -341,6 +428,21 @@ class MainWindow(QMainWindow):
         for control in (self.add_button, self.erase_button):
             control.setEnabled(ready and self.mask is not None)
         self.save_button.setEnabled(ready and self.mask is not None and self.dirty)
+
+    def update_measurement_details(self):
+        selection = self.selected_lesion()
+        measurement = self.measurements.get(selection["lesion_id"]) if selection else None
+        self.history_button.setEnabled(measurement is not None)
+        review = measurement is not None and measurement["state"] == "needs_review"
+        if review:
+            events = self.store.value_history(selection["lesion_id"])
+            latest_auto = {e["field"]: e for e in events if
+                           e["actor"] == "system" and e["roi_ref"] == measurement["roi_ref"]}
+            reasons = list(dict.fromkeys(e.get("source_error") or e["note"] for e in latest_auto.values()
+                                         if e.get("source_error") or e["to"] is None))
+            reason = " / ".join(reasons) or measurement["audit"][-1]["note"]
+            self.review_reason.setText("量测需复核 · " + reason)
+        self.review_reason.setVisible(review)
 
     def label_changed(self):
         if self.mask is not None:
@@ -408,7 +510,8 @@ class MainWindow(QMainWindow):
         lesion = next(item for item in self.store.bundle["lesions"] if item["lesion_id"] == self.lesion_id)
         _, revision = self.store.load_roi(self.lesion_id)
         self.show_audit(lesion, revision)
-        self.message.setText(f"ROI 已保存 · {label} · proposed")
+        state = self.measurements[self.lesion_id]["state"]
+        self.message.setText(f"ROI 与量测已保存 · {label} · {state}")
 
     def closeEvent(self, event):
         if self.import_task is not None:

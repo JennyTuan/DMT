@@ -1,7 +1,8 @@
-"""Pack 02 single-slice PET ROI creation and local versioned storage."""
+"""Single-slice PET contours, measurements and their local revision history."""
 
 import base64
 import getpass
+import hashlib
 import json
 import math
 import os
@@ -18,6 +19,11 @@ from uuid import uuid4
 import numpy as np
 from jsonschema import Draft202012Validator, FormatChecker, ValidationError
 from referencing import Registry, Resource
+
+
+_FIELDS = ("suv_max", "longest_diameter_mm")
+_EDITABLE = {"proposed", "needs_review"}
+_NO_ATTENUATION = "缺/未衰减校正，SUV 仅供复核"
 
 
 def _check_seed(shape, x, y, fraction):
@@ -75,6 +81,7 @@ def _validate_bundle(bundle):
         raise ValueError(f"检查数据未通过 Pack 01 校验（{exc.json_path}）") from exc
     lesion_ids = {row["lesion_id"] for row in bundle["lesions"]}
     if (len(lesion_ids) != len(bundle["lesions"])
+            or len({m["measurement_id"] for m in bundle["measurements"]}) != len(bundle["measurements"])
             or any(row["exam_id"] != bundle["exam"]["exam_id"] for row in bundle["lesions"])
             or any(row["lesion_id"] not in lesion_ids for row in bundle["measurements"])):
         raise ValueError("检查、病灶和量测标识不一致")
@@ -141,16 +148,69 @@ def _records(bundle, lesion_id):
     return lesions[0], measurements[0]
 
 
+def _number(value):
+    if isinstance(value, bool) or not isinstance(value, Real):
+        raise ValueError("量测值必须是非负有限数值")
+    try:
+        value = float(value)
+    except OverflowError as exc:
+        raise ValueError("量测值超出可保存范围") from exc
+    if not math.isfinite(value) or value < 0:
+        raise ValueError("量测值必须是非负有限数值")
+    return value
+
+
+def _record_value(history, measurement, field, value, actor, at, note, **source):
+    if actor == "user":
+        source["operator"] = getpass.getuser()
+    history.setdefault(measurement["measurement_id"], []).append({
+        "at": at, "actor": actor, "field": field, "from": measurement[field], "to": value,
+        "note": note, "roi_ref": measurement["roi_ref"], **source,
+    })
+    measurement[field] = value
+
+
+def _roi_source(mask, meta):
+    # Shape and packed bits identify the actual contour, even if an altered
+    # version file still decodes successfully on the original SOP instance.
+    digest = hashlib.sha256(f"{mask.shape[0]}x{mask.shape[1]}:".encode("ascii"))
+    digest.update(np.packbits(mask).tobytes())
+    return {"slice_index": meta["slice_index"], "sop_uid": meta["sop_uid"],
+            "mask_sha256": digest.hexdigest()}
+
+
+def _validate_events(events):
+    previous = {}
+    for event in events:
+        field = event["field"]
+        if (field not in _FIELDS or event["actor"] not in ("system", "user")
+                or not isinstance(event["note"], str) or not event["note"].strip()
+                or datetime.fromisoformat(event["at"]).tzinfo is None
+                or not isinstance(event["roi_ref"], (str, type(None)))):
+            raise ValueError
+        for key in ("from", "to"):
+            if event[key] is not None:
+                _number(event[key])
+        if field in previous and event["from"] != previous[field]:
+            raise ValueError
+        previous[field] = event["to"]
+
+
 class StudyStore:
-    def __init__(self, root: Path, exam: dict):
+    def __init__(self, root: Path, exam: dict, measure=None):
         initial = {"exam": deepcopy(exam), "lesions": [], "measurements": []}
         _validate_bundle(initial)
         self.root = Path(root).resolve()
         self.exam_id = _safe_id(exam["exam_id"])
+        self.measure = measure
         self.path = _local_path(self.root, Path("data/exams") / (self.exam_id + ".json"))
         self.lock_path = _local_path(self.root, self.path.with_suffix(".lock"))
+        self.history_path = _local_path(self.root, Path("data/measurements") / (self.exam_id + ".history.json"))
+        self.journal_path = _local_path(self.root, self.path.with_suffix(".pending"))
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with _writer_lock(self.lock_path):
+            self._recover()
+            self._history = self._read_history()
             if self.path.exists():
                 self.bundle = _read_json(self.path)
                 _validate_bundle(self.bundle)
@@ -165,6 +225,185 @@ class StudyStore:
             else:
                 _write_json(self.path, initial)
                 self.bundle = initial
+            if self.measure is not None:
+                self._backfill()
+
+    def _read_history(self):
+        if not self.history_path.exists():
+            return {"revision": None, "by_measurement": {}}
+        data = _read_json(self.history_path)
+        if (not isinstance(data, dict) or not isinstance(data.get("revision"), str)
+                or not isinstance(data.get("by_measurement"), dict)
+                or any(not isinstance(items, list) for items in data["by_measurement"].values())):
+            raise ValueError("数值留痕文件无法读取，请核对数据目录")
+        try:
+            for events in data["by_measurement"].values():
+                _validate_events(events)
+        except (KeyError, ValueError, TypeError) as exc:
+            raise ValueError("数值留痕记录不完整或前后不一致，请核对历史文件") from exc
+        return data
+
+    def _recover(self):
+        if not self.journal_path.exists():
+            return
+        # The sidecar revision is the commit point. All store readers open under
+        # the same lock, so a crashed writer's partial manifest is never loaded.
+        pending = _read_json(self.journal_path)
+        if self._read_history()["revision"] != pending["revision"]:
+            previous = pending["previous_bundle"]
+            _validate_bundle(previous)
+            if previous["exam"]["exam_id"] != self.exam_id:
+                raise ValueError("待恢复记录与本次检查不匹配")
+            if _read_json(self.path) != previous:
+                _write_json(self.path, previous)
+            if pending["roi_ref"] is not None:
+                self._roi_path(pending["lesion_id"], pending["roi_ref"]).unlink(missing_ok=True)
+        self.journal_path.unlink()
+
+    @contextmanager
+    def _writing(self):
+        with _writer_lock(self.lock_path):
+            self._recover()
+            if _read_json(self.path) != self.bundle or self._read_history() != self._history:
+                raise ValueError("其他窗口已更新此检查，请重新打开后再编辑")
+            yield
+
+    def _commit(self, bundle, history, *, roi_ref=None, record=None):
+        """Commit while holding the exam writer lock; keep ROI versions immutable."""
+        _validate_bundle(bundle)
+        changed_history = history != self._history["by_measurement"]
+        if changed_history:
+            sidecar = {"revision": uuid4().hex, "by_measurement": history}
+            _write_json(self.journal_path, {
+                "revision": sidecar["revision"], "previous_bundle": self.bundle, "roi_ref": roi_ref,
+                "lesion_id": record["lesion_id"] if record else None,
+            })
+        version_path = self._roi_path(record["lesion_id"], roi_ref) if record else None
+        try:
+            if version_path is not None:
+                _write_json(version_path, record)
+            if bundle != self.bundle:
+                _write_json(self.path, bundle)
+            if changed_history:
+                _write_json(self.history_path, sidecar)
+        except OSError:
+            if changed_history:
+                self._recover()
+            elif version_path is not None:
+                version_path.unlink(missing_ok=True)
+            raise
+        self.bundle = bundle
+        if changed_history:
+            self._history = sidecar
+            # Once committed, cleanup can safely be retried on the next open/write.
+            try:
+                self.journal_path.unlink()
+            except OSError:
+                pass
+
+    def value_history(self, lesion_id):
+        _, measurement = _records(self.bundle, lesion_id)
+        return deepcopy(self._history["by_measurement"].get(measurement["measurement_id"], []))
+
+    def _review(self, measurement, at, reasons):
+        if not self.bundle["exam"]["attenuation_corrected"]:
+            reasons = [_NO_ATTENUATION, *reasons]
+        if reasons and measurement["state"] == "proposed":
+            measurement["audit"].append({"at": at, "actor": "system", "from": "proposed",
+                                         "to": "needs_review", "note": "；".join(dict.fromkeys(reasons))})
+            measurement["state"] = "needs_review"
+
+    def edit_value(self, lesion_id, field, value, note):
+        if field not in _FIELDS or not isinstance(note, str) or not note.strip():
+            raise ValueError("请选择有效的量测字段并填写修改说明")
+        value = _number(value)
+        with self._writing():
+            bundle = deepcopy(self.bundle)
+            history = deepcopy(self._history["by_measurement"])
+            lesion, measurement = _records(bundle, lesion_id)
+            if lesion["status"] not in _EDITABLE or measurement["state"] not in _EDITABLE:
+                raise ValueError("此病灶当前状态不允许修改量测")
+            at = datetime.now(timezone.utc).isoformat()
+            _record_value(history, measurement, field, value, "user", at, note.strip())
+            measurement["edited"] = True
+            self._review(measurement, at, [])
+            self._commit(bundle, history)
+
+    def _measure_roi(self, measurement, history, mask, meta, at, *, current=None, roi_error=None):
+        # Explicit ROI saves always generate two entries. On reopen, compare the
+        # current DICOM evidence per field, keeping any prior human override.
+        source = {}
+        try:
+            if roi_error:
+                raise ValueError(roi_error)
+            source = _roi_source(mask, meta)
+            values, notes = self.measure(mask, source["slice_index"], source["sop_uid"])
+            values = {f: None if values[f] is None else _number(values[f]) for f in _FIELDS}
+            if not all(isinstance(notes[f], str) and notes[f].strip() for f in _FIELDS):
+                raise ValueError("缺少量测依据")
+        except Exception as exc:
+            # A failed calculation is itself an auditable result. The source ROI
+            # is still retained, including when the modality data cannot be mapped.
+            reason = f"ROI 量测失败（{exc}）" if isinstance(exc, ValueError) else "ROI 量测失败，请核对影像与元数据"
+            values = dict.fromkeys(_FIELDS)
+            notes = dict.fromkeys(_FIELDS, reason)
+        reasons = [notes[f] for f in _FIELDS if values[f] is None]
+        if not self.bundle["exam"]["attenuation_corrected"]:
+            values["suv_max"] = None
+            if _NO_ATTENUATION not in notes["suv_max"]:
+                notes = {**notes, "suv_max": f"{notes['suv_max']}。{_NO_ATTENUATION}"}
+        latest = {e["field"]: e for e in current or ()}
+        automatic = {e["field"]: e for e in current or () if e["actor"] == "system"}
+        for field in _FIELDS:
+            value, note = values[field], notes[field]
+            evidence = source.copy()
+            issue = note if value is None else None
+            if issue:
+                evidence["source_error"] = issue
+            if current is not None:
+                last = latest.get(field, {})
+                prior_auto = automatic.get(field, {})
+                prior_issue = prior_auto.get("source_error")
+                preserved = last.get("preserved")
+                if last.get("actor") == "user":
+                    preserved = "manual"
+                elif not last and measurement[field] is not None:
+                    preserved = "legacy"  # Non-null legacy values have no provable author.
+                if preserved:
+                    if issue == prior_issue:
+                        continue
+                    value = measurement[field]
+                    note += "；保留人工修订值" if preserved == "manual" else "；保留既有数值"
+                    evidence["preserved"] = preserved
+                elif last and value == measurement[field] and issue == prior_issue:
+                    continue
+            _record_value(history, measurement, field, value, "system", at, note, **evidence)
+        self._review(measurement, at, reasons)
+
+    def _backfill(self):
+        bundle = deepcopy(self.bundle)
+        history = deepcopy(self._history["by_measurement"])
+        at = datetime.now(timezone.utc).isoformat()
+        for measurement in bundle["measurements"]:
+            lesion_id = measurement["lesion_id"]
+            lesion, _ = _records(bundle, lesion_id)
+            if measurement["state"] not in _EDITABLE or lesion["status"] not in _EDITABLE:
+                continue
+            if any(e["to"] == "needs_review" and e["actor"] == "user" for e in measurement["audit"]):
+                continue
+            events = history.get(measurement["measurement_id"], [])
+            current = [e for e in events if e["roi_ref"] == measurement["roi_ref"]]
+            meta = mask = error = None
+            try:
+                mask, meta = self.load_roi(lesion_id)
+                source = _roi_source(mask, meta)
+                if any(event[k] != v for event in current for k, v in source.items() if k in event):
+                    raise ValueError("ROI 像素、PET 实例或层面与量测留痕不符")
+            except ValueError as exc:
+                error = str(exc)
+            self._measure_roi(measurement, history, mask, meta, at, current=current, roi_error=error)
+        if bundle != self.bundle or history != self._history["by_measurement"]:
+            self._commit(bundle, history)
 
     def _roi_path(self, lesion_id, ref):
         folder = Path("data/rois") / self.exam_id / _safe_id(lesion_id)
@@ -195,6 +434,8 @@ class StudyStore:
                 raise ValueError
             bits = np.unpackbits(np.frombuffer(packed, dtype=np.uint8), count=size)
             mask = bits.astype(bool).reshape(shape)
+            if not mask.any():
+                raise ValueError
             record["seed"] = seed
             return mask, record
         except (ValueError, KeyError, TypeError) as exc:
@@ -202,6 +443,10 @@ class StudyStore:
 
     def save_roi(self, mask: np.ndarray, *, slice_index: int, sop_uid: str, seed: tuple[int, int],
                  fraction: float, label: str, lesion_id: str | None = None, edited: bool = False) -> str:
+        with self._writing():
+            return self._save_roi(mask, slice_index, sop_uid, seed, fraction, label, lesion_id, edited)
+
+    def _save_roi(self, mask, slice_index, sop_uid, seed, fraction, label, lesion_id, edited):
         mask = np.asarray(mask)
         _check_seed(mask.shape, *seed, fraction)
         if mask.dtype != np.bool_ or not mask.any():
@@ -211,8 +456,8 @@ class StudyStore:
         if not label:
             raise ValueError("请填写病灶部位标签")
 
-        base = self.bundle
-        bundle = deepcopy(base)
+        bundle = deepcopy(self.bundle)
+        history = deepcopy(self._history["by_measurement"])
         at = datetime.now(timezone.utc).isoformat()
         previous_ref = None
         if lesion_id is None:
@@ -221,23 +466,25 @@ class StudyStore:
                      "to": "proposed", "note": "已保存人工修订的 PET 轮廓" if edited else "已生成 PET 种子生长轮廓"}
             lesion = {"lesion_id": lesion_id, "exam_id": self.exam_id, "status": "proposed", "audit": [event]}
             measurement = {"measurement_id": "meas_" + uuid4().hex, "lesion_id": lesion_id,
+                           "suv_max": None, "longest_diameter_mm": None,
                            "state": "proposed", "audit": [event.copy()]}
             bundle["lesions"].append(lesion)
             bundle["measurements"].append(measurement)
         else:
             lesion, measurement = _records(bundle, _safe_id(lesion_id))
-            if lesion["status"] != "proposed" or measurement["state"] != "proposed":
+            allowed = _EDITABLE if self.measure is not None else {"proposed"}
+            if lesion["status"] not in allowed or measurement["state"] not in allowed:
                 raise ValueError("只能编辑待确认的病灶轮廓")
+            if self.measure is None and measurement["measurement_id"] in history:
+                raise ValueError("请在可重算量测的阅片窗口编辑此轮廓")
             previous_ref = measurement["roi_ref"]
             if previous_ref:
                 self.load_roi(lesion_id)  # The prior revision must remain readable.
             edited = True
 
         ref = f"data/rois/{self.exam_id}/{lesion_id}/{uuid4().hex}.json"
-        version_path = self._roi_path(lesion_id, ref)
         lesion["label"] = label
-        measurement.update(roi_ref=ref, edited=edited, suv_max=None, longest_diameter_mm=None)
-        _validate_bundle(bundle)
+        measurement.update(roi_ref=ref, edited=edited)
         record = {
             "exam_id": self.exam_id, "lesion_id": lesion_id, "label": label,
             "pet_series_ref": bundle["exam"]["pet_series_ref"], "sop_uid": sop_uid,
@@ -247,15 +494,9 @@ class StudyStore:
             "previous_ref": previous_ref, "at": at, "actor": "user" if edited else "system",
             "operator": getpass.getuser(), "edited": edited,
         }
-        with _writer_lock(self.lock_path):
-            if _read_json(self.path) != base:
-                raise ValueError("其他窗口已更新此检查，请重新打开后再编辑")
-            # The exam manifest is the commit point. Readers only see complete versions.
-            _write_json(version_path, record)
-            try:
-                _write_json(self.path, bundle)
-            except OSError:
-                version_path.unlink(missing_ok=True)
-                raise
-            self.bundle = bundle
+        if self.measure is None:
+            measurement.update(suv_max=None, longest_diameter_mm=None)
+        else:
+            self._measure_roi(measurement, history, mask, record, at)
+        self._commit(bundle, history, roi_ref=ref, record=record)
         return lesion_id

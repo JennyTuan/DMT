@@ -1,6 +1,6 @@
 """Import one classic single-frame PET/CT pair for independent 2-D viewing."""
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
@@ -25,6 +25,9 @@ class Study:
     ct_spacing: tuple[float, float]
     pet_inverted: bool
     ct_inverted: bool
+    # In-memory headers only, in exactly the same order as their decoded planes.
+    pet_headers: tuple[pydicom.Dataset, ...] = field(default=(), repr=False)
+    ct_headers: tuple[pydicom.Dataset, ...] = field(default=(), repr=False)
 
 
 def _reference(kind, *values):
@@ -158,7 +161,8 @@ def _volume(planes, sop_class):
         except (TypeError, ValueError, OverflowError):
             raise ValueError("像素灰阶换算参数无效。") from None
     refs = [_reference("sop", str(ds.SOPInstanceUID)) for _, ds in planes]
-    return volume, refs, tuple(map(float, spacing)), photo == "MONOCHROME1"
+    headers = tuple(ds for _, ds in planes)
+    return volume, refs, tuple(map(float, spacing)), photo == "MONOCHROME1", headers
 
 
 def load_study(directory: Path) -> Study:
@@ -218,7 +222,8 @@ def load_study(directory: Path) -> Study:
         "prototype_banner": "原型·不可用于临床诊疗决策",
         "is_synthetic": any(str(ds[0x0008001C].value) == "YES" for ds in headers if 0x0008001C in ds),
     }
-    pet, pet_uids, pet_spacing, pet_inverted = _volume(series["PET"], PositronEmissionTomographyImageStorage)
-    ct, _, ct_spacing, ct_inverted = _volume(series["CT"], CTImageStorage)
+    pet, pet_uids, pet_spacing, pet_inverted, pet_headers = _volume(series["PET"], PositronEmissionTomographyImageStorage)
+    ct, _, ct_spacing, ct_inverted, ct_headers = _volume(series["CT"], CTImageStorage)
     label = {True: "已校正", False: "未校正", None: "未知"}[correction]
-    return Study(exam, pet, ct, pet_uids, label, pet_spacing, ct_spacing, pet_inverted, ct_inverted)
+    return Study(exam, pet, ct, pet_uids, label, pet_spacing, ct_spacing, pet_inverted, ct_inverted,
+                 pet_headers, ct_headers)
