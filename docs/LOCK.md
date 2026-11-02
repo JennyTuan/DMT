@@ -54,4 +54,16 @@ D3 前须有 ≥2 例可配对 PET-CT 样例（公开或院内脱敏）；若无
 3. 无自动恶性 / 手术建议 / 诊断结论字段  
 4. 残留风险可接受条件：限定科室、限定病种、有人值守试用——禁止写「可院内正式诊疗用」
 
+## Codex 文档入口（勿双轨）
+
+**以方案已推文档为准**（Jenny 贴 Codex 时优先这条链）：
+
+1. `docs/CODEX_BRIEF.md` — 总 BRIEF  
+2. `docs/packs/01-data-contract.md` — **当前唯一开工包**（数据契约）  
+3. `schemas/v0/` — Pack01 交付落点  
+
+补充锁定（不替代上列）：`docs/UI_DIRECTION.md`（后续 UI 包必遵；Pack01 不实现 UI）。
+
+`docs/CODEX_BRIEF_PACK1.md` 若存在，仅作 Lumi 侧详注；**执行以 `docs/packs/01-data-contract.md` 为准**，避免两套提示词并行。
+
 变更本 LOCK 须 Jenny 点头 + Lumi 收口；角色（产品/方案/合规）不得私下扩 scope。
