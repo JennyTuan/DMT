@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JennyTuan/DMT/schemas/v0/exam.schema.json",
+  "title": "Exam",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "exam_id",
+    "patient_pseudo_id",
+    "study_datetime",
+    "modality",
+    "pet_series_ref",
+    "ct_series_ref",
+    "attenuation_corrected",
+    "prototype_banner"
+  ],
+  "properties": {
+    "exam_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "patient_pseudo_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "study_datetime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "modality": {
+      "const": "PET-CT"
+    },
+    "disease": {
+      "const": "lymphoma"
+    },
+    "pet_series_ref": {
+      "type": "string"
+    },
+    "ct_series_ref": {
+      "type": "string"
+    },
+    "attenuation_corrected": {
+      "type": "boolean"
+    },
+    "prior_exam_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "prototype_banner": {
+      "const": "原型·不可用于临床诊疗决策"
+    },
+    "is_synthetic": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

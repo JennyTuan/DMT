@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JennyTuan/DMT/schemas/v0/finding_state.schema.json",
+  "title": "FindingState",
+  "$defs": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "proposed",
+        "needs_review",
+        "accepted",
+        "rejected"
+      ]
+    },
+    "audit_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "at",
+        "actor",
+        "from",
+        "to"
+      ],
+      "properties": {
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "actor": {
+          "type": "string",
+          "enum": [
+            "system",
+            "user"
+          ]
+        },
+        "from": {
+          "$ref": "#/$defs/status"
+        },
+        "to": {
+          "$ref": "#/$defs/status"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "allowed_transitions": {
+      "description": "draft->proposed; proposed->needs_review|accepted|rejected; needs_review->proposed|accepted|rejected; accepted/rejected terminal unless user reopens to draft",
+      "type": "object"
+    }
+  }
+}

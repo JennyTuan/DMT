@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JennyTuan/DMT/schemas/v0/lesion.schema.json",
+  "title": "Lesion",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "lesion_id",
+    "exam_id",
+    "label",
+    "status"
+  ],
+  "properties": {
+    "lesion_id": {
+      "type": "string"
+    },
+    "exam_id": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string",
+      "description": "部位自由文本，如 纵隔淋巴结"
+    },
+    "status": {
+      "$ref": "finding_state.schema.json#/$defs/status"
+    }
+  }
+}
