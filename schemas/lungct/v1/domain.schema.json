@@ -1,0 +1,369 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:dmt:lungct:v1",
+  "title": "肺结节 P0 领域契约",
+  "$defs": {
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "project_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "operator": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "project_id",
+        "name",
+        "operator",
+        "created_at"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_code": {
+          "type": "string"
+        },
+        "authorized": {
+          "const": true
+        },
+        "deidentified": {
+          "const": true
+        },
+        "pixels_checked": {
+          "const": true
+        },
+        "adult_chest": {
+          "const": true
+        },
+        "noncontrast": {
+          "const": true
+        },
+        "research_source": {
+          "enum": [
+            "screening",
+            "non_screening",
+            "unknown"
+          ]
+        }
+      },
+      "required": [
+        "source_code",
+        "authorized",
+        "deidentified",
+        "pixels_checked",
+        "adult_chest",
+        "noncontrast",
+        "research_source"
+      ]
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "finding_id": {
+          "type": "string"
+        },
+        "series_key": {
+          "type": "string"
+        },
+        "run_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "enum": [
+            "ai",
+            "manual"
+          ]
+        },
+        "center_lps": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "slice_key": {
+          "type": "string"
+        },
+        "box_lps": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number"
+          },
+          "minItems": 6,
+          "maxItems": 6
+        },
+        "score": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "finding_id",
+        "series_key",
+        "run_id",
+        "source",
+        "center_lps",
+        "slice_key",
+        "box_lps",
+        "score"
+      ]
+    },
+    "revision": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "revision_id": {
+          "type": "string"
+        },
+        "finding_id": {
+          "type": "string"
+        },
+        "previous_revision_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "operator": {
+          "type": "string"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "pending",
+            "confirmed",
+            "excluded",
+            "uncertain"
+          ]
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "center_lps": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "slice_key": {
+          "type": "string"
+        },
+        "side": {
+          "enum": [
+            "left",
+            "right",
+            "unknown"
+          ]
+        },
+        "lobe": {
+          "enum": [
+            "RUL",
+            "RML",
+            "RLL",
+            "LUL",
+            "LLL",
+            "unknown"
+          ]
+        },
+        "nodule_type": {
+          "enum": [
+            "solid",
+            "part_solid",
+            "ground_glass",
+            "unknown"
+          ]
+        },
+        "long_axis": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "short_axis": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "missing_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "revision_id",
+        "finding_id",
+        "previous_revision_id",
+        "operator",
+        "at",
+        "action",
+        "state",
+        "reason",
+        "center_lps",
+        "slice_key",
+        "side",
+        "lobe",
+        "nodule_type",
+        "long_axis",
+        "short_axis",
+        "missing_reason"
+      ]
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "run_id": {
+          "type": "string"
+        },
+        "series_key": {
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "queued",
+            "running",
+            "succeeded",
+            "failed"
+          ]
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "input_sha256": {
+          "type": "string"
+        },
+        "model": {
+          "type": "object"
+        },
+        "error_code": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "candidate_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      },
+      "required": [
+        "run_id",
+        "series_key",
+        "state",
+        "complete",
+        "input_sha256",
+        "model",
+        "error_code",
+        "candidate_count"
+      ]
+    },
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "snapshot_id": {
+          "type": "string"
+        },
+        "project_id": {
+          "type": "string"
+        },
+        "study_key": {
+          "type": "string"
+        },
+        "series_key": {
+          "type": "string"
+        },
+        "draft_id": {
+          "type": "string"
+        },
+        "run_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "analysis_mode": {
+          "enum": [
+            "manual",
+            "ai"
+          ]
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "operator": {
+          "type": "string"
+        },
+        "findings": {
+          "type": "array"
+        },
+        "revisions": {
+          "type": "array"
+        },
+        "counts": {
+          "type": "object"
+        },
+        "sha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "snapshot_id",
+        "project_id",
+        "study_key",
+        "series_key",
+        "draft_id",
+        "run_id",
+        "analysis_mode",
+        "completed_at",
+        "operator",
+        "findings",
+        "revisions",
+        "counts",
+        "sha256"
+      ]
+    }
+  }
+}

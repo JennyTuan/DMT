@@ -1,0 +1,13 @@
+test_audit_fields (__main__.Pack01.test_audit_fields) ... ok
+test_current_state_matches_complete_history (__main__.Pack01.test_current_state_matches_complete_history) ... ok
+test_lesion_track_is_optional_and_nullable (__main__.Pack01.test_lesion_track_is_optional_and_nullable) ... ok
+test_only_authorized_transitions (__main__.Pack01.test_only_authorized_transitions) ... ok
+test_paired_examples (__main__.Pack01.test_paired_examples) ... ok
+test_prototype_scope_and_nullable_measurements (__main__.Pack01.test_prototype_scope_and_nullable_measurements) ... ok
+test_rejects_extra_fields_at_every_level (__main__.Pack01.test_rejects_extra_fields_at_every_level) ... ok
+test_schema_dialect (__main__.Pack01.test_schema_dialect) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.074s
+
+OK

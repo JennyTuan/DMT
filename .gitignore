@@ -1,0 +1,7 @@
+/.venv/
+/data/
+*.[dD][cC][mM]
+__pycache__/
+*.py[cod]
+node_modules/
+apps/petfollow-lymphoma/web/client/dist/

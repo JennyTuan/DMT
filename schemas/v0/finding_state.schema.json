@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JennyTuan/DMT/schemas/v0/finding_state.schema.json",
+  "title": "FindingState",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["state", "audit"],
+  "properties": {
+    "state": { "$ref": "#/$defs/status" },
+    "audit": { "$ref": "#/$defs/history" }
+  },
+  "$ref": "#/$defs/state_matches_history",
+  "$defs": {
+    "status": {
+      "type": "string",
+      "default": "proposed",
+      "enum": [
+        "draft",
+        "proposed",
+        "needs_review",
+        "accepted",
+        "rejected"
+      ]
+    },
+    "audit_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "at",
+        "actor",
+        "from",
+        "to",
+        "note"
+      ],
+      "properties": {
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "actor": {
+          "type": "string",
+          "enum": [
+            "system",
+            "user"
+          ]
+        },
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "$ref": "#/$defs/allowed_transitions"
+    },
+    "allowed_transitions": {
+      "oneOf": [
+        { "properties": { "from": { "const": "draft" }, "to": { "const": "proposed" } } },
+        { "properties": { "from": { "const": "proposed" }, "to": { "const": "needs_review" } } },
+        { "properties": {
+          "from": { "const": "needs_review" },
+          "to": { "enum": ["accepted", "rejected"] },
+          "actor": { "const": "user" }
+        } }
+      ]
+    },
+    "history": {
+      "type": "array",
+      "prefixItems": [
+        { "$ref": "#/$defs/audit_entry", "properties": { "from": { "const": "draft" } } },
+        { "$ref": "#/$defs/audit_entry", "properties": { "from": { "const": "proposed" } } },
+        { "$ref": "#/$defs/audit_entry", "properties": { "from": { "const": "needs_review" } } }
+      ],
+      "items": false
+    },
+    "state_matches_history": {
+      "description": "病灶用 status，量测用 state。当前值须等于最后一条审计记录的去向；草稿的历史为空。",
+      "oneOf": [
+        { "properties": {
+          "state": { "const": "draft" }, "status": { "const": "draft" },
+          "audit": { "maxItems": 0 }
+        } },
+        { "properties": {
+          "state": { "const": "proposed" }, "status": { "const": "proposed" },
+          "audit": { "minItems": 1, "maxItems": 1 }
+        } },
+        { "properties": {
+          "state": { "const": "needs_review" }, "status": { "const": "needs_review" },
+          "audit": { "minItems": 2, "maxItems": 2 }
+        } },
+        { "properties": {
+          "state": { "const": "accepted" }, "status": { "const": "accepted" },
+          "audit": { "contains": { "properties": { "to": { "const": "accepted" } } } }
+        } },
+        { "properties": {
+          "state": { "const": "rejected" }, "status": { "const": "rejected" },
+          "audit": { "contains": { "properties": { "to": { "const": "rejected" } } } }
+        } }
+      ]
+    }
+  }
+}
