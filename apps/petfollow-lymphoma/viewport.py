@@ -3,12 +3,14 @@
 import math
 
 import numpy as np
-from PySide6.QtCore import QPointF, QRectF, QSignalBlocker, Qt, Signal
-from PySide6.QtGui import QColor, QFontDatabase, QImage, QPainter, QPainterPath, QPen, qRgb
+from PySide6.QtCore import QPointF, QRect, QRectF, QSignalBlocker, Qt, Signal
+from PySide6.QtGui import QColor, QImage, QPainter, QPainterPath, QPen, qRgb
 from PySide6.QtWidgets import (
     QAbstractSpinBox, QComboBox, QDoubleSpinBox, QFrame, QHBoxLayout, QLabel, QSizePolicy,
-    QSlider, QVBoxLayout, QWidget,
+    QSlider, QStyle, QStyleOptionComboBox, QStyleOptionSpinBox, QVBoxLayout, QWidget,
 )
+
+from visuals import icon
 
 
 # PET intensity rises from black through copper to ivory.
@@ -64,11 +66,15 @@ class _SliceCanvas(QWidget):
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.fillRect(self.rect(), QColor("#0c0e10"))
+        painter.fillRect(self.rect(), QColor("#05080c"))
         target = self._image_rect()
         if target.isEmpty():
-            painter.setPen(QColor("#94a0a8"))
-            painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, f"等待导入 {self._modality} 序列")
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            cx, cy = self.width() / 2, self.height() / 2
+            icon("layers", "#678093", 34).paint(painter, QRect(round(cx - 17), round(cy - 30), 34, 34))
+            painter.setPen(QColor("#93a2b1"))
+            painter.drawText(QRectF(0, cy + 8, self.width(), 25), Qt.AlignmentFlag.AlignCenter,
+                             f"等待导入 {self._modality} 序列")
             return
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
         painter.drawImage(target, self.image)
@@ -120,6 +126,36 @@ class _SliceCanvas(QWidget):
         event.accept()
 
 
+class _PresetBox(QComboBox):
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        options = QStyleOptionComboBox()
+        self.initStyleOption(options)
+        arrow = self.style().subControlRect(QStyle.CC_ComboBox, options, QStyle.SC_ComboBoxArrow, self)
+        with QPainter(self) as painter:
+            painter.translate(QRectF(arrow).center())
+            painter.rotate(90)
+            color = "#a5b7c6" if self.isEnabled() else "#586a79"
+            icon("chevron", color, 14).paint(painter, QRect(-7, -7, 14, 14))
+
+
+class _WindowSpinBox(QDoubleSpinBox):
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        options = QStyleOptionSpinBox()
+        self.initStyleOption(options)
+        with QPainter(self) as painter:
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            color = QColor("#a5b7c6" if self.isEnabled() else "#586a79")
+            painter.setPen(QPen(color, 1.25, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+            for button in (QStyle.SC_SpinBoxUp, QStyle.SC_SpinBoxDown):
+                rect = self.style().subControlRect(QStyle.CC_SpinBox, options, button, self)
+                center = QRectF(rect).center()
+                painter.drawLine(center - QPointF(2.5, 0), center + QPointF(2.5, 0))
+                if button == QStyle.SC_SpinBoxUp:
+                    painter.drawLine(center - QPointF(0, 2.5), center + QPointF(0, 2.5))
+
+
 class SliceView(QFrame):
     pixel_clicked = Signal(int, int)
     pixel_dragged = Signal(int, int)
@@ -143,49 +179,53 @@ class SliceView(QFrame):
         layout = QVBoxLayout(self)
         layout.setSpacing(0)
         layout.setContentsMargins(1, 1, 1, 1)
-        heading = QHBoxLayout()
-        heading.setContentsMargins(8, 4, 8, 4)
+        header = QFrame(objectName="sliceHeader")
+        heading = QHBoxLayout(header)
+        heading.setContentsMargins(11, 7, 11, 6)
         heading.setSpacing(8)
         tag = QLabel(self.modality)
-        tag.setObjectName("modalityTag")
+        tag.setObjectName("sliceTag")
         tag.setProperty("isPet", self.modality == "PET")
         heading.addWidget(tag)
-        heading.addWidget(QLabel("正电子图像" if self.modality == "PET" else "断层图像"))
+        heading.addWidget(QLabel("正电子图像" if self.modality == "PET" else "断层图像",
+                                 objectName="sliceTitle"))
         heading.addStretch()
-        heading.addWidget(QLabel("层"))
-        self._counter = QLabel("— / —")
-        self._counter.setObjectName("sliceCounter")
-        mono = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
-        self._counter.setFont(mono)
-        heading.addWidget(self._counter)
-        layout.addLayout(heading)
+        self._matrix = QLabel(objectName="sliceMatrix")
+        self._matrix.setToolTip("图像矩阵（列 × 行）")
+        heading.addWidget(self._matrix)
+        layout.addWidget(header)
 
         toolbar = QFrame()
         toolbar.setObjectName("windowToolbar")
         controls = QHBoxLayout(toolbar)
-        controls.setContentsMargins(7, 3, 7, 3)
-        controls.setSpacing(4)
-        self._preset = QComboBox()
+        controls.setContentsMargins(10, 0, 10, 7)
+        controls.setSpacing(5)
+        self._preset = _PresetBox()
         self._preset.setPlaceholderText("预设")
         self._preset.setAccessibleName("显示预设")
         self._preset.setToolTip("显示预设")
-        controls.addWidget(self._preset)
-        self._width = QDoubleSpinBox()
-        self._level = QDoubleSpinBox()
+        self._preset.setMinimumWidth(73)
+        self._preset.setMaximumWidth(128)
+        self._preset.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        controls.addWidget(self._preset, 1)
+        controls.addStretch()
+        self._width = _WindowSpinBox()
+        self._level = _WindowSpinBox()
         self._width.setObjectName("windowWidth")
         self._level.setObjectName("windowLevel")
         for label, spin in (("窗宽", self._width), ("窗位", self._level)):
-            caption = QLabel(label)
+            caption = QLabel(label, objectName="windowCaption")
             caption.setBuddy(spin)
             controls.addWidget(caption)
-            spin.setFont(mono)
             spin.setAccessibleName(label)
-            spin.setToolTip(label)
+            spin.setToolTip(f"{label} · 可直接输入数值或按 ↑ ↓ 微调")
+            spin.setAlignment(Qt.AlignmentFlag.AlignRight)
             spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.PlusMinus)
             spin.setDecimals(0 if self.modality == "CT" else 2)
             spin.setRange(-1e12, 1e12)
             spin.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
-            spin.setMinimumWidth(55)
+            spin.setMinimumWidth(65)
+            spin.setMaximumWidth(112)
             spin.setKeyboardTracking(False)
             spin.valueChanged.connect(self._manual_window)
             controls.addWidget(spin, 1)
@@ -196,39 +236,82 @@ class SliceView(QFrame):
         layout.addWidget(toolbar)
         layout.addWidget(self._canvas, 1)
 
-        footer = QHBoxLayout()
-        footer.setContentsMargins(8, 2, 8, 3)
+        navigation = QFrame(objectName="sliceNavigation")
+        footer = QHBoxLayout(navigation)
+        footer.setContentsMargins(11, 4, 11, 4)
         footer.setSpacing(8)
-        footer.addWidget(QLabel("切层"))
+        footer.addWidget(QLabel("切片", objectName="windowCaption"))
         self._slider = QSlider(Qt.Orientation.Horizontal)
         self._slider.setAccessibleName(f"{self.modality} 切层")
+        self._slider.setToolTip("拖动滑块切层，也可在图像上滚动鼠标滚轮")
+        self._slider.setFixedHeight(22)
         self._slider.setRange(0, 0)
         self._slider.setEnabled(False)
         self._slider.valueChanged.connect(self.set_index)
-        footer.addWidget(self._slider)
-        layout.addLayout(footer)
+        footer.addWidget(self._slider, 1)
+        self._counter = QLabel("— / —", objectName="sliceCounter")
+        self._counter.setToolTip("当前层 / 总层数")
+        footer.addWidget(self._counter)
+        layout.addWidget(navigation)
         self.setStyleSheet("""
-            QFrame#sliceView { background: #20252a; border: 1px solid #3c444b; }
-            QFrame#sliceView QLabel { color: #c2c9ce; border: none; background: transparent; }
-            QFrame#sliceView QLabel#modalityTag { color: #e0e7eb; font-weight: bold; }
-            QFrame#sliceView QLabel#modalityTag[isPet="true"] { color: #e4bd96; }
-            QFrame#windowToolbar { background: #1a1f23; border-top: 1px solid #353c42; }
+            QFrame#sliceView { background: #111923; border: 1px solid #293642; border-radius: 6px; }
+            QFrame#sliceHeader, QFrame#windowToolbar, QFrame#sliceNavigation {
+                background: transparent; border: none;
+            }
+            QFrame#sliceView QLabel { background: transparent; border: none; color: #dfe6eb; }
+            QFrame#sliceView QLabel#sliceTag {
+                color: #93cef7; background: #203649; border-radius: 4px; padding: 2px 7px;
+                font: bold 13px "Consolas";
+            }
+            QFrame#sliceView QLabel#sliceTag[isPet="true"] { color: #f6ca8d; background: #3a3024; }
+            QFrame#sliceView QLabel#sliceTitle { font-size: 15px; font-weight: 600; }
+            QFrame#sliceView QLabel#sliceMatrix { color: #91a3b4; font: 12px "Consolas"; }
+            QFrame#sliceView QLabel#windowCaption { color: #a2b1bd; font-size: 12px; }
             QFrame#sliceView QComboBox, QFrame#sliceView QDoubleSpinBox {
-                color: #e2e6e9; background: #2b3238; border: 1px solid #485158;
-                border-radius: 2px; padding: 1px 3px; min-height: 19px;
+                color: #dae4ea; background: #1c2835; border: 1px solid #2b3a49;
+                border-radius: 4px; padding: 1px 5px; min-height: 21px;
+            }
+            QFrame#sliceView QComboBox { font-size: 12px; padding-right: 15px; }
+            QFrame#sliceView QDoubleSpinBox { font: 13px "Consolas"; padding-right: 17px; }
+            QFrame#sliceView QDoubleSpinBox QLineEdit {
+                border: none; background: transparent; padding: 0;
+                selection-background-color: #315955; selection-color: #f2fcfa;
+            }
+            QFrame#sliceView QComboBox:hover, QFrame#sliceView QDoubleSpinBox:hover {
+                border-color: #4a6071; background: #22303e;
+            }
+            QFrame#sliceView QComboBox:focus, QFrame#sliceView QDoubleSpinBox:focus {
+                border-color: #76dbca;
+            }
+            QFrame#sliceView QComboBox::drop-down { width: 17px; border: none; background: transparent; }
+            QFrame#sliceView QComboBox::down-arrow, QFrame#sliceView QDoubleSpinBox::up-arrow,
+            QFrame#sliceView QDoubleSpinBox::down-arrow { width: 0; height: 0; image: none; }
+            QFrame#sliceView QDoubleSpinBox::up-button, QFrame#sliceView QDoubleSpinBox::down-button {
+                width: 14px; border: none; background: transparent;
+            }
+            QFrame#sliceView QDoubleSpinBox::up-button:hover, QFrame#sliceView QDoubleSpinBox::down-button:hover {
+                background: #314555;
             }
             QFrame#sliceView QComboBox:disabled, QFrame#sliceView QDoubleSpinBox:disabled {
-                color: #77818a; border-color: #343c42;
+                color: #81909f; background: #17212b; border-color: #23303d;
             }
-            QFrame#sliceView QLabel#sliceCounter, QFrame#sliceView QDoubleSpinBox {
-                font-family: Consolas, monospace;
+            QFrame#sliceView QComboBox QAbstractItemView {
+                color: #dee8ee; background: #1c2835; border: 1px solid #374857; padding: 3px;
+                selection-background-color: #2c4b50; selection-color: #e2f4f1;
             }
-            QFrame#sliceView QComboBox QAbstractItemView { background: #262d32; color: #e2e6e9; }
-            QFrame#sliceView QSlider::groove:horizontal { height: 3px; background: #41494f; }
-            QFrame#sliceView QSlider::sub-page:horizontal { background: #78969c; }
+            QFrame#sliceView QLabel#sliceCounter { font: 13px "Consolas"; color: #cbd9e2; }
+            QFrame#sliceView QSlider { border: none; background: transparent; }
+            QFrame#sliceView QSlider::groove:horizontal {
+                height: 3px; border-radius: 1px; background: #344354;
+            }
+            QFrame#sliceView QSlider::sub-page:horizontal { background: #509f96; border-radius: 1px; }
             QFrame#sliceView QSlider::handle:horizontal {
-                background: #c8d4d6; width: 8px; margin: -4px 0; border-radius: 1px;
+                background: #80d8c9; width: 11px; margin: -4px 0; border-radius: 5px;
             }
+            QFrame#sliceView QSlider::handle:horizontal:hover,
+            QFrame#sliceView QSlider::handle:horizontal:focus { background: #b0f3e7; }
+            QFrame#sliceView QSlider::sub-page:horizontal:disabled { background: #344354; }
+            QFrame#sliceView QSlider::handle:horizontal:disabled { background: #506170; }
         """)
 
     @property
@@ -244,6 +327,7 @@ class SliceView(QFrame):
         if not all(math.isfinite(v) and v > 0 for v in (row_mm, col_mm)):
             raise ValueError("像素间距须为正数")
         self._volume = volume
+        self._matrix.setText(f"{volume.shape[2]} × {volume.shape[1]}")
         self._canvas.spacing = row_mm, col_mm
         self._inverted = inverted
         self._canvas.outline = QPainterPath()

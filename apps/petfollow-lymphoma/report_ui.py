@@ -19,10 +19,6 @@ class ReportDialog(QDialog):
         current, prior = bundle_provider()
         self.draft = ReportDraft(data_root, current, prior, gate_provider=gate_provider)
         self.setWindowTitle("淋巴瘤 PET 随访原型 · 描述性报告草稿")
-        self.setStyleSheet(
-            "QTextBrowser, QPlainTextEdit { background: #191f23; color: #e0e5e7; "
-            "border: 1px solid #39434a; padding: 5px; selection-background-color: #344d54; }"
-        )
         self.resize(900, 660)
         layout = QVBoxLayout(self)
         self.banner = QLabel(BANNER, objectName="dialogBanner")

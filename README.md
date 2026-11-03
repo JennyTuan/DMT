@@ -53,7 +53,7 @@ py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe apps/petfollow-lymphoma/main.py --demo
 ```
 
-1. **打开检查。** `--demo` 会在本机生成并导入一对合成 DICOM（PET 21 层、CT 31 层），顶栏显示「示意数据」。平时可省略该参数，在窗口点「导入 DICOM 目录」，选择同一患者、同次淋巴瘤 FDG PET-CT 检查的 PET 和 CT 序列共同所在的目录。
+1. **打开检查。** `--demo` 会在本机生成并导入一对合成 DICOM（PET 21 层、CT 31 层），顶栏显示「示意数据」。平时可省略该参数，在窗口点「导入 DICOM」，选择同一患者、同次淋巴瘤 FDG PET-CT 检查的 PET 和 CT 序列共同所在的目录。
 2. **查看图像。** 两个视口独立切层，在图像上滚动鼠标或拖动下方滑块。上方可选显示预设，也可输入窗宽、窗位。两幅图的层号各自计数。
 3. **生成并编辑 ROI。** 示意 PET 默认打开第 11 层。保持 65% 阈值，点击图像中央稍偏右的亮灶（原图像素 `x=104, y=90`）。青色线为轮廓。程序在当前层从种子向上、下、左、右生长，纳入与种子相连且像素值达到「种子值 × 阈值」的像素。窗宽窗位只影响显示。调阈值会重新生长；点「涂入」或「擦除」后可按住左键修改轮廓。
 4. **保存与重开。** 填部位，点「保存 ROI」。点「＋ 新病灶」可另建条目。重新导入同一检查后，点右侧病灶行可恢复对应 PET 层和已保存的轮廓。界面下方显示最近保存时间。
@@ -65,7 +65,7 @@ py -3.13 -m venv .venv
 ## Pack 03 量测与数值留痕
 
 1. **试算。** 按上节启动 `--demo`。在 PET 第 11 层用 65% 阈值点 `(104, 90)` 并保存 ROI。右侧应显示 SUVmax 约 **9.35**、CT 最长径估计约 **12.90 mm**。把阈值改为 80% 再保存，最长径应约为 **10.61 mm**。这些是 v2 合成数据的验收数值。
-2. **改数和查历史。** 双击列表中的 SUVmax 或最长径，填写新值与修改依据，点「保存修改」。选中病灶后点「数值留痕」，可查前后值、操作方、时间、说明和 ROI 版本。重开同一检查会保留人工值。保存新轮廓会重算两项，旧值仍可追溯。
+2. **改数和查历史。** 双击列表中的 SUVmax 或最长径，也可点选中病灶下方的大号量测值，填写新值与修改依据，点「保存修改」。选中病灶后点「数值留痕」，可查前后值、操作方、时间、说明和 ROI 版本。重开同一检查会保留人工值。保存新轮廓会重算两项，旧值仍可追溯。
 3. **复核。** 每项量测独立计算。衰减校正未确认、SUV 换算资料不足或 CT 无法对齐时，对应自动值留空，量测进入 `needs_review`。选中条目可见原因，人工改数仍保留复核状态。既有 Pack 02 ROI 重开后会补算；旧示例的 PET 单位是原始计数，只能补算 CT 最长径。
 
 **量测口径。** SUVmax 取单层 ROI 内的最大体重标准化 SUV。支持有标定依据的直接 SUVbw（GML）或 BQML 体重法。BQML 的 START 路径要求能确定注射时刻、半衰期及共同采集起点；ADMIN 使用注射时的剂量。CT 最长径是 PET 轮廓投影到同参考系、覆盖该层面的 CT 后，投影内最远两个 CT 像素中心的距离。计算记录注明 CT 层号，可据 CT 复核。[DICOM PET 模块](https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.8.9.html) · [DICOM 图像平面](https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.7.6.2.html)
@@ -98,6 +98,22 @@ py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 .\.venv\Scripts\python.exe schemas/v0/test_contract.py -v
 ```
+
+## 界面与公开影像试用
+
+桌面界面采用深蓝灰底、青绿色操作色和原创矢量图标。PET/CT 保持双视口，患者与检查信息单列，右侧集中放置病灶、可点改的量测值与 ROI 工具。阈值可直接输入、微调或拖动滑块；拖动结束后重算轮廓。小窗口下右侧工具可滚动。Windows 支持时使用深色原生标题栏。
+
+已在本机验证 [FDG-PET-CT-Lesions 的公开去面容版本](https://portal.imaging.datacommons.cancer.gov/collections/fdg_pet_ct_lesions/)，许可为 CC BY 4.0。选取的匿名受试者 `PETCT_15f4b7254f` 在 TCIA 临床表中两次均标为淋巴瘤。去标识化检查日期为 `2003-07-18`、`2003-10-11`，各有 284 层 PET，CT 分别为 340、1,214 层。数据表没有治疗日期，只按检查先后展示。
+
+影像保留在本机 `data/public_cases/PETCT_15f4b7254f/<日期>/`，不随代码发布。该目录下 `SOURCE.md`、`LICENSE.txt`、`provenance.json` 记录署名、许可和公开序列来源；`import-validation.json` 记录完整序列的本机导入结果。选择一个日期目录即可导入 PET 和 CT。已有这些本地文件时可直接启动：
+
+```powershell
+.\.venv\Scripts\python.exe apps/petfollow-lymphoma/main.py --dicom data/public_cases/PETCT_15f4b7254f/2003-10-11
+```
+
+这批真实 PET 的不同床位采集时刻不同。现有 SUV 换算不能确认共同衰变参考，保存 ROI 时 SUVmax 留空并进入 `needs_review`，可查看具体原因；不补写原始标签。请使用完整日期目录；`selected-slices/` 仅为早期非连续预览，不能与完整序列混用既有 ROI 的层号。
+
+数据署名：Gatidis, S. & Kuestner, T. (2022). *A whole-body FDG-PET/CT dataset with manually annotated tumor lesions (FDG-PET-CT-Lesions)* (Version 2). The Cancer Imaging Archive. [10.7937/gkr0-xv29](https://doi.org/10.7937/gkr0-xv29)。
 
 ## For Codex
 
