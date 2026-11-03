@@ -1,10 +1,29 @@
 # DMT
 
 **DMT** is the umbrella repository for a multimodal *follow-up* product line.  
-**First module only (this sprint):** `petfollow-lymphoma` — lymphoma post-treatment **PET-CT metabolic follow-up**, hospital in-trial / research **prototype**.
+现有 `petfollow-lymphoma` 保留；新增独立 `lungct` 单次肺 CT 科研工作流。两者都是科研原型，肺 CT 目前仅实施 P0。
 
 > **原型·不可用于临床诊疗决策**  
 > Prototype — not for clinical diagnosis or treatment decisions.
+
+## 肺 CT 入口（P0）
+
+已具备本地 DICOM 导入与质控、轴位和冠状定位、人工补标/复核/10/6 mm 测量验证、追加修订、冻结快照、项目 CSV/JSON 导出和源片回查。仅支持成人非增强胸部 CT、规则近轴位、单帧未压缩 Little Endian、层厚 ≤2.5 mm。增强、定位像、不规则几何等会拦截；P1/P2 未实现。
+
+```powershell
+# 人工模式，依赖见 apps/lungct/requirements.txt
+.\.venv\Scripts\python.exe -m apps.lungct.server --enable-lungct --data-dir data/lungct --allow-root D:\approved-ct
+```
+
+打开 `http://127.0.0.1:8766`。应用默认不启用，必须显式传入开关；批准目录须换成实际的脱敏 CT 目录。创建项目后登记来源、授权、脱敏、像素检查、成人胸部和非增强信息，再导入/选择有效序列。没有模型时可完成整个人工流程。
+
+真实模型使用独立 Python 3.11 环境，不能装入 PET 环境。本机已准备 `.venv-lungct-model` 和 `data/lungct-assets/monai-0.6.9`；安装/下载与运行分开，服务运行时不下载权重。Windows PyTorch 2.4.0 加载问题采用官方 2.4.1 修复，实际版本、配置和资格验证记录见 [模型记录](docs/lungct/model-feasibility.md)。
+
+```powershell
+.\.venv-lungct-model\Scripts\python.exe -m apps.lungct.server --enable-lungct --data-dir data/lungct --allow-root D:\approved-ct --model-bundle data/lungct-assets/monai-0.6.9 --model-profile low-memory
+```
+
+验收边界和复现命令见 [A01–A10 验收表](docs/lungct/acceptance.md)，逐工单记录在 [T00](docs/lungct/tickets/T00.md) 至 [T07](docs/lungct/tickets/T07.md)。合成测试不证明真实检出；A04 需真实推理与人工核对，完整 AI 里程碑按验收表状态判断。PET 启动与原有文档如下。
 
 ## What this is / is not
 

@@ -1,0 +1,61 @@
+test_A03_10mm_6mm_physical_endpoints (test_review.ReviewTests.test_A03_10mm_6mm_physical_endpoints) ... ok
+test_A06_three_test_candidates_plus_manual (test_review.ReviewTests.test_A06_three_test_candidates_plus_manual) ... ok
+test_A07_stale_revision_undo_reopen_and_immutable_snapshot (test_review.ReviewTests.test_A07_stale_revision_undo_reopen_and_immutable_snapshot) ... ok
+test_display_numbers_remain_stable_after_more_findings_and_restart (test_review.ReviewTests.test_display_numbers_remain_stable_after_more_findings_and_restart) ... FAIL
+test_measurement_constraints_and_completion_reasons (test_review.ReviewTests.test_measurement_constraints_and_completion_reasons) ... ok
+test_zero_confirmation_requires_explicit_confirmation (test_review.ReviewTests.test_zero_confirmation_requires_explicit_confirmation) ... ok
+
+======================================================================
+FAIL: test_display_numbers_remain_stable_after_more_findings_and_restart (test_review.ReviewTests.test_display_numbers_remain_stable_after_more_findings_and_restart)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_review.py", line 90, in test_display_numbers_remain_stable_after_more_findings_and_restart
+    self.assertEqual([by_id[f['finding_id']] for f in original],[f'N-{i:03d}' for i in range(1,11)])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['N-002', 'N-008', 'N-007', 'N-003', 'N-004', '[38 chars]005'] != ['N-001', 'N-002', 'N-003', 'N-004', 'N-005', '[38 chars]010']
+
+First differing element 0:
+'N-002'
+'N-001'
+
+- ['N-002',
+?       ^
+
++ ['N-001',
+?       ^
+
+-  'N-008',
+?       ^
+
++  'N-002',
+?       ^
+
+-  'N-007',
+   'N-003',
+   'N-004',
++  'N-005',
+   'N-006',
+-  'N-010',
+?      -
+
++  'N-007',
+?       +
+
+-  'N-001',
+?       ^
+
++  'N-008',
+?       ^
+
+   'N-009',
+-  'N-005']
+?       -
+
++  'N-010']
+?      +
+
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.863s
+
+FAILED (failures=1)

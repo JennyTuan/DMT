@@ -83,5 +83,30 @@ class ReviewTests(unittest.TestCase):
         with self.assertRaises(ValueError):self.complete()
         self.assertEqual(self.complete(confirm_zero=True)['counts']['confirmed'],0)
 
+    def test_display_numbers_remain_stable_after_more_findings_and_restart(self):
+        original=[self.add() for _ in range(10)]
+        records=self.service.get_draft(self.project,self.did)['findings']
+        by_id={f['finding_id']:f['label'] for f in records}
+        self.assertEqual([by_id[f['finding_id']] for f in original],[f'N-{i:03d}' for i in range(1,11)])
+
+    def test_redrawing_long_axis_clears_dependent_short_axis(self):
+        f=self.add();f=self.revise(f,{'long_axis':[[-11,-3,6],[-1,-3,6]],'short_axis':[[-6,-6,6],[-6,0,6]]})
+        updated=self.revise(f,{'long_axis':[[-11,-3,6],[-1,-2,6]]})
+        self.assertIsNone(updated['revision']['short_axis'])
+        self.assertEqual(updated['revision']['missing_reason'],'not_measured')
+        history=self.service.finding_history(self.project,self.did,f['finding_id'])
+        self.assertEqual(history[1]['short_axis']['length_mm'],6)
+
+    def test_latest_reopened_draft_is_selected_by_time_not_uuid(self):
+        from unittest.mock import patch
+        with patch('apps.lungct.review.uid',return_value='snapshot_test'):
+            snapshot=self.complete(confirm_zero=True)
+        with patch('apps.lungct.review.uid',return_value='draft_0000'):
+            newest=self.service.reopen_case(self.project,snapshot['snapshot_id'],'OP')
+        self.assertEqual(self.service.state(self.project)['drafts'][-1]['draft_id'],newest['draft_id'])
+        with patch('apps.lungct.review.uid',return_value='draft_zzzz'):
+            second=self.service.reopen_case(self.project,snapshot['snapshot_id'],'OP')
+        self.assertEqual(self.service.start_draft(self.project,self.series['series_key'],'OP')['draft_id'],second['draft_id'])
+
 
 if __name__=='__main__':unittest.main()

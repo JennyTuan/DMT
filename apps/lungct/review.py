@@ -9,8 +9,9 @@ FIELDS={'state','reason','center_lps','slice_key','side','lobe','nodule_type','l
 
 
 def current(state,draft):
-    return [dict(finding_id=fid,label=f'N-{i+1:03d}',original=deepcopy(state['findings'][fid]),
-                 revision=deepcopy(state['revisions'][rid])) for i,(fid,rid) in enumerate(draft['heads'].items())]
+    records=[dict(finding_id=fid,label=state['findings'][fid]['label'],original=deepcopy(state['findings'][fid]),
+                 revision=deepcopy(state['revisions'][rid])) for fid,rid in draft['heads'].items()]
+    return sorted(records,key=lambda f:f['label'])
 
 
 def counts(records):
@@ -40,7 +41,7 @@ def create_finding(state,draft,point,operator,source='manual',run_id=None,box=No
     index,x,y=patient_to_pixel(g,point,require_plane=(source=='manual'))
     source_point=list(g.pixel_to_patient(index,x,y))
     fid=uid('finding')
-    state['findings'][fid]=dict(finding_id=fid,project_id=draft['project_id'],series_key=draft['series_key'],
+    state['findings'][fid]=dict(finding_id=fid,label=f"N-{len(draft['heads'])+1:03d}",project_id=draft['project_id'],series_key=draft['series_key'],
         source=source,run_id=run_id,center_lps=list(point),slice_key=series['slice_keys'][index],box_lps=box,score=score)
     values=dict(state='pending',reason=None,center_lps=source_point,slice_key=series['slice_keys'][index],
                 side='unknown',lobe='unknown',nodule_type='unknown',long_axis=None,short_axis=None,missing_reason=None)
@@ -69,6 +70,7 @@ def validate_revision(revision,series):
         if length<=0:raise ValueError('径线长度必须大于零')
         revision[axis]=dict(endpoints=ends.tolist(),length_mm=length,slice_key=revision['slice_key'],method='manual_axial_lps')
     long,short=revision['long_axis'],revision['short_axis']
+    if long and short:revision['missing_reason']=None
     if short:
         if not long:raise ValueError('先绘制长径，再绘制短径')
         if short['length_mm']>long['length_mm']+.001:raise ValueError('短径超过长径，请重画')
@@ -90,7 +92,7 @@ class ReviewService:
         with self.repo.transaction() as state:
             s=owned(state,'series',series,project)
             if not s['eligible'] or state['studies'][s['study_key']]['selected_series']!=series:raise ValueError('请先确认有效分析序列')
-            for d in state['drafts'].values():
+            for d in sorted(state['drafts'].values(),key=lambda d:d['created_at'],reverse=True):
                 if d['project_id']==project and d['series_key']==series and d['run_id']==run_id and d['status']!='completed':
                     return {**deepcopy(d),'findings':current(state,d)}
             run=None
@@ -121,6 +123,8 @@ class ReviewService:
             if item['heads'][finding]!=expected_revision_id:raise ValueError('修订已过期，请刷新后重试')
             if not isinstance(patch,dict) or not patch or set(patch)-FIELDS:raise ValueError('修订字段不在白名单中')
             values={k:deepcopy(state['revisions'][expected_revision_id][k]) for k in FIELDS}
+            if 'long_axis' in patch and 'short_axis' not in patch:
+                values.update(short_axis=None,missing_reason='not_measured')
             if ('center_lps' in patch and patch['center_lps']!=values['center_lps']) or ('slice_key' in patch and patch['slice_key']!=values['slice_key']):
                 values.update(long_axis=None,short_axis=None,missing_reason='location_changed')
             values.update(deepcopy(patch))
@@ -159,7 +163,7 @@ class ReviewService:
                 findings=records,revisions=list(revisions.values()),counts=summary,run=run,
                 heads=deepcopy(item['heads']),research_source=state['series'][item['series_key']]['source']['research_source'],
                 synthetic=state['series'][item['series_key']]['synthetic'],
-                run_history=[deepcopy(r) for r in state['runs'].values() if r['project_id']==project and r['series_key']==item['series_key']])
+                run_history=sorted([deepcopy(r) for r in state['runs'].values() if r['project_id']==project and r['series_key']==item['series_key']],key=lambda r:r['created_at']))
             snapshot['sha256']=digest(snapshot)
             state['snapshots'][sid]=snapshot;item['status']='completed';item['snapshot_id']=sid
             state['studies'][item['study_key']]['status']='completed'

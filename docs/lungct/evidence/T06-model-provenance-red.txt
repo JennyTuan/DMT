@@ -1,0 +1,18 @@
+test_A08_counts_zero_denominator_hashes_bom_and_lookup (test_export.ExportTests.test_A08_counts_zero_denominator_hashes_bom_and_lookup) ... ok
+test_model_profile_and_runtime_export_without_private_fields (test_export.ExportTests.test_model_profile_and_runtime_export_without_private_fields) ... ERROR
+test_snapshot_and_project_boundaries_and_unique_packages (test_export.ExportTests.test_snapshot_and_project_boundaries_and_unique_packages) ... ok
+test_write_failure_never_reports_partial_success (test_export.ExportTests.test_write_failure_never_reports_partial_success) ... ok
+
+======================================================================
+ERROR: test_model_profile_and_runtime_export_without_private_fields (test_export.ExportTests.test_model_profile_and_runtime_export_without_private_fields)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_export.py", line 18, in test_model_profile_and_runtime_export_without_private_fields
+    self.assertEqual(result['model']['execution_profile'],'low-memory')
+                     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'execution_profile'
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.755s
+
+FAILED (errors=1)

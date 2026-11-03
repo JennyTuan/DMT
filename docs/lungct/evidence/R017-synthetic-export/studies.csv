@@ -1,0 +1,2 @@
+﻿project_id,case_code,subject_key,study_key,series_key,snapshot_id,analysis_mode,run_id,run_state,ai_candidate_count,manual_count,confirmed_count,excluded_count,uncertain_count,research_source,synthetic,notice
+project_fe9e8a25ff8647a69ee03d4b230cb6ea,R-017,subject_e3a1cd3f35d93e9002ee2139,study_898d23ecec919c28e959b785,series_2dfbf4726ae188e28878d6a4,snapshot_e69f170db2654f3192c7bb61697f4ba1,ai,run_d48d62dfa5c94968ac3437b7e94ff94f,succeeded,3,1,2,1,1,unknown,True,仅供科研，不用于临床诊断

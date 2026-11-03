@@ -6,4 +6,6 @@ schemas/lungct/** text eol=lf
 docs/lungct/** text eol=lf
 docs/lungct/**/*.png -text
 # These exported artifact bytes are covered by manifest SHA-256 checksums.
-docs/lungct/evidence/R017-synthetic-export/* -text
+docs/lungct/evidence/R017-synthetic-export/* -text -whitespace
+# Preserve captured test output, including unittest's trailing status spaces.
+docs/lungct/evidence/*.txt -whitespace

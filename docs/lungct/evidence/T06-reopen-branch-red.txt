@@ -1,0 +1,25 @@
+test_A03_10mm_6mm_physical_endpoints (test_review.ReviewTests.test_A03_10mm_6mm_physical_endpoints) ... ok
+test_A06_three_test_candidates_plus_manual (test_review.ReviewTests.test_A06_three_test_candidates_plus_manual) ... ok
+test_A07_stale_revision_undo_reopen_and_immutable_snapshot (test_review.ReviewTests.test_A07_stale_revision_undo_reopen_and_immutable_snapshot) ... ok
+test_display_numbers_remain_stable_after_more_findings_and_restart (test_review.ReviewTests.test_display_numbers_remain_stable_after_more_findings_and_restart) ... ok
+test_latest_reopened_draft_is_selected_by_time_not_uuid (test_review.ReviewTests.test_latest_reopened_draft_is_selected_by_time_not_uuid) ... FAIL
+test_measurement_constraints_and_completion_reasons (test_review.ReviewTests.test_measurement_constraints_and_completion_reasons) ... ok
+test_redrawing_long_axis_clears_dependent_short_axis (test_review.ReviewTests.test_redrawing_long_axis_clears_dependent_short_axis) ... ok
+test_zero_confirmation_requires_explicit_confirmation (test_review.ReviewTests.test_zero_confirmation_requires_explicit_confirmation) ... ok
+
+======================================================================
+FAIL: test_latest_reopened_draft_is_selected_by_time_not_uuid (test_review.ReviewTests.test_latest_reopened_draft_is_selected_by_time_not_uuid)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_review.py", line 109, in test_latest_reopened_draft_is_selected_by_time_not_uuid
+    self.assertEqual(self.service.start_draft(self.project,self.series['series_key'],'OP')['draft_id'],second['draft_id'])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'draft_0000' != 'draft_zzzz'
+- draft_0000
++ draft_zzzz
+
+
+----------------------------------------------------------------------
+Ran 8 tests in 1.201s
+
+FAILED (failures=1)

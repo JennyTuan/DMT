@@ -1,0 +1,16 @@
+AssertionError [ERR_ASSERTION]: Never save against a new index while its image is loading
+
+2 !== 1
+
+    at D:\STN02\DMT\tools\lungct\browser_qa.cjs:28:10 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 2,
+  expected: 1,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+{
+  errors: [],
+  steps: [ '创建项目、导入薄层+定位像、确认有效序列、建立人工草稿', '原片绘制10.0/6.0 mm径线、人工侧别和确认保存' ]
+}

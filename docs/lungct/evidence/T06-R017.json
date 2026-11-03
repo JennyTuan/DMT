@@ -1,0 +1,23 @@
+{
+  "data": "SYNTHETIC PROTOCOL ONLY",
+  "A04": "BLOCKED, NOT RUN",
+  "counts": {
+    "ai": 3,
+    "manual": 1,
+    "confirmed": 2,
+    "excluded": 1,
+    "uncertain": 1,
+    "pending": 0
+  },
+  "export_counts": {
+    "studies": 1,
+    "nodules": 2,
+    "observations": 4
+  },
+  "files": {
+    "dictionary.csv": "1a257e187f8e9c6b4f481ade5aa024d7b9b665d9c2bba5d0af3e0f955e9f513e",
+    "nodules.csv": "ddbc6468e59dfa1732924104dc46233a40964d510534302955c7aedc7e8494d6",
+    "review.json": "98ece96e86ad13845ef6cf945fa130904fb264ffb84adc7933c4594796af85dc",
+    "studies.csv": "c59b795032255246c7154e49ce2cabb73618262c5b1acd84043ce8e60306e524"
+  }
+}

@@ -14,7 +14,7 @@ STUDY_FIELDS=['project_id','case_code','subject_key','study_key','series_key','s
 NODULE_FIELDS=['project_id','case_code','study_key','series_key','snapshot_id','finding_id','label','slice_key','center_lps_x','center_lps_y','center_lps_z','source','side','lobe','nodule_type','long_mm','short_mm','missing_reason','revision_id','notice']
 ORIGINAL_FIELDS=['finding_id','series_key','run_id','source','center_lps','slice_key','box_lps','score']
 REVISION_FIELDS=['revision_id','finding_id','previous_revision_id','operator','at','action','state','reason','center_lps','slice_key','side','lobe','nodule_type','missing_reason']
-RUN_FIELDS=['run_id','series_key','state','complete','input_sha256','error_code','candidate_count','threshold','elapsed_seconds','model_to_lps']
+RUN_FIELDS=['run_id','series_key','state','complete','input_sha256','error_code','candidate_count','threshold','elapsed_seconds','model_to_lps','created_at']
 LABELS=dict(project_id='研究项目键',case_code='研究病例号',subject_key='项目内受试者键',study_key='检查键',series_key='序列键',snapshot_id='冻结快照键',analysis_mode='分析方式',run_id='运行键',run_state='运行状态',ai_candidate_count='完整成功运行的原始候选数',manual_count='人工新增数',confirmed_count='已确认数',excluded_count='已排除数',uncertain_count='存疑数',research_source='研究来源',synthetic='是否合成样本',notice='科研声明',finding_id='单次观察稳定键',label='病例内显示编号',slice_key='原始切片键',center_lps_x='患者LPS中心X',center_lps_y='患者LPS中心Y',center_lps_z='患者LPS中心Z',source='原始来源',side='人工侧别',lobe='人工肺叶',nodule_type='人工结节类型',long_mm='人工长径',short_mm='人工短径',missing_reason='结构化缺测原因',revision_id='采用的修订键')
 ENUMS={'analysis_mode':'manual=人工;ai=AI候选后人工复核','run_state':'not_run=未运行;queued=排队;running=运行中;succeeded=成功;failed=失败','source':'ai=AI;manual=人工','side':'left=左;right=右;unknown=未判定','lobe':'RUL=右上;RML=右中;RLL=右下;LUL=左上;LLL=左下;unknown=未判定','nodule_type':'solid=实性;part_solid=部分实性;ground_glass=纯磨玻璃;unknown=未判定','research_source':'screening=筛查;non_screening=非筛查;unknown=未知','synthetic':'true=合成;false=已登记数据','missing_reason':'not_measured=未测;not_visible=不可见;unreliable_boundary=边界不可靠;location_changed=位置变更'}
 
@@ -32,7 +32,14 @@ def revision(value):
 def run_export(run):
     if not run:return None
     result=whitelist(run,RUN_FIELDS)
-    result['model']=whitelist(run['model'],['name','version','weight_sha256','preprocessing_sha256','license']) if run.get('model') else None
+    result['model']=None
+    if run.get('model'):
+        model=run['model']
+        result['model']=whitelist(model,['name','version','weight_sha256','preprocessing_sha256','license','execution_profile','software_version','adapter_sha256'])
+        if model.get('preprocessing'):
+            result['model']['preprocessing']=whitelist(model['preprocessing'],['bundle_version','orientation','spacing','hu_range','nms','patch','cuda_amp'])
+        if model.get('runtime'):
+            result['model']['runtime']=whitelist(model['runtime'],['python','torch','monai','numpy','device','cuda','precision','cuda_peak_allocated_bytes','cuda_peak_reserved_bytes'])
     return result
 
 
@@ -65,7 +72,7 @@ class ExportService:
         studies=[];nodules=[];audit=[]
         for s in snapshots:
             study=state['studies'][s['study_key']];run=s['run'];summary=s['counts']
-            history=s.get('run_history',[]);last=history[-1] if history else None
+            history=sorted(s.get('run_history',[]),key=lambda r:r['created_at']);last=history[-1] if history else None
             studies.append(dict(project_id=project,case_code=study['case_code'],subject_key=study['subject_key'],study_key=s['study_key'],series_key=s['series_key'],snapshot_id=s['snapshot_id'],analysis_mode=s['analysis_mode'],run_id=s['run_id'],run_state=run['state'] if run else (last['state'] if last else 'not_run'),ai_candidate_count=run['candidate_count'] if run and run['state']=='succeeded' else None,manual_count=summary['manual'],confirmed_count=summary['confirmed'],excluded_count=summary['excluded'],uncertain_count=summary['uncertain'],research_source=s['research_source'],synthetic=s['synthetic'],notice=NOTICE))
             for f in s['findings']:
                 r=f['revision']
@@ -88,7 +95,7 @@ class ExportService:
             (temporary/'manifest.json').write_text(encoded(manifest),encoding='utf-8')
             os.replace(temporary,final)
             with self.repo.transaction() as latest:latest['exports'][export_id]=dict(project_id=project,manifest=manifest)
-            return manifest
+            return {**manifest,'output_directory':str(final)}
         except BaseException:
             if temporary.exists():shutil.rmtree(temporary)
             raise

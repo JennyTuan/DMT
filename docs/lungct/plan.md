@@ -23,12 +23,12 @@ T02–T05→T06: 人工链可先集成，A04 阻塞使 T06 只能部分验证。
 
 ## 工单
 
-- [ ] T00: 恢复盘点、基线、领域契约、模型可行性。证据：PET unittest/contract、启动 HTTP 200、文件摘要一致。
-- [ ] T01: `dicom_io.py geometry.py repository.py service.py`；`test_import.py` 验证 A01 + 输入隐私、几何门禁。顺序/去重/不同项目/UID 冲突/定位像/缺间距/非均匀/左右。
-- [ ] T02: `viewer.py server.py static/*`；`test_viewer.py` 验证源切片回查、患者冠状图、各向异性/逆向方向的往返误差；浏览器两尺寸交互。
-- [ ] T03: `review.py service.py` 与 UI；`test_review.py` 验证 A03/A06/A07 人工路径、10/6 mm、缺测原因、过期修订拒绝、撤销/重开、快照不变。
+- [x] T00: 恢复盘点、基线、领域契约、模型可行性。证据：PET unittest/contract、启动 HTTP 200、文件摘要一致。
+- [x] T01: `dicom_io.py geometry.py repository.py service.py`；`test_import.py` 验证 A01 + 输入隐私、几何门禁。顺序/去重/不同项目/UID 冲突/定位像/缺间距/非均匀/左右。
+- [x] T02: `viewer.py server.py static/*`；`test_viewer.py` 验证源切片回查、患者冠状图、各向异性/逆向方向的往返误差；浏览器两尺寸交互。
+- [x] T03: `review.py service.py` 与 UI；`test_review.py` 验证 A03/A06/A07 人工路径、10/6 mm、缺测原因、过期修订拒绝、撤销/重开、快照不变。
 - [ ] T04: `model.py` 离线固定配置适配器、任务状态与错误；`test_model.py` 仅证明协议与降级；A04 真实数据/权重/人工核对独立阻塞。
-- [ ] T05: `export.py` 与预览 UI；`test_export.py` 验证 A08/A09、CSV BOM/空值/哈希/白名单、零确认分母、项目边界、落盘事务。
+- [x] T05: `export.py` 与预览 UI；`test_export.py` 验证 A08/A09、CSV BOM/空值/哈希/白名单、零确认分母、项目边界、落盘事务。
 - [ ] T06: 全套 unittest、浏览器 1440×900/1280×800、PET 回归、README/acceptance；新上下文全分支审查。未达到 A04 不宣称 AI 版通过。
 - [ ] T07: 依赖 T06 和真实研究者，保留空白研究记录模板与招募条件，不填写假结果。
 
@@ -37,3 +37,5 @@ T02–T05→T06: 人工链可先集成，A04 阻塞使 T06 只能部分验证。
 新增测试首先运行 `python -m unittest discover -s tests/lungct -p test_<ticket>.py -v`，预期缺功能失败；实现后同命令预期通过。提交工单涉及的源文件、测试、证据、`tickets/Txx.md`（修改文件、命令、结果、剩余风险）。总回归分开运行 PET 与 lungct，避免旧 tests 导入路径污染。
 
 Review Focus: 输入授权与反序列化边界；DICOM 错侧/错层和不规则几何；模型空间回写；修订/快照不可变；项目隔离；日志与导出 PHI；浏览器焦点/标记陈旧/测量屏幕逆变换。
+
+2026-11-03 更新：M1 人工闭环通过，32/32 肺 CT、132/132 PET、8/8 PET 契约和两尺寸浏览器通过。A04 真实技术实验已成功：公开权重/NLST CT、低内存配置两次一致；剩余人工核对与应用真实闭环仍阻断 M2，T07 未执行。详情以 acceptance.md 和 model-feasibility.md 为准。

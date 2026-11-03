@@ -1,0 +1,708 @@
+test_all_manual_operations_work_without_network (test_contract.ContractTests.test_all_manual_operations_work_without_network) ... 
+  test_all_manual_operations_work_without_network (test_contract.ContractTests.test_all_manual_operations_work_without_network) (entity='project') ... ERROR
+  test_all_manual_operations_work_without_network (test_contract.ContractTests.test_all_manual_operations_work_without_network) (entity='study') ... ERROR
+  test_all_manual_operations_work_without_network (test_contract.ContractTests.test_all_manual_operations_work_without_network) (entity='series') ... ERROR
+  test_all_manual_operations_work_without_network (test_contract.ContractTests.test_all_manual_operations_work_without_network) (entity='draft') ... ERROR
+  test_all_manual_operations_work_without_network (test_contract.ContractTests.test_all_manual_operations_work_without_network) (entity='finding') ... ERROR
+  test_all_manual_operations_work_without_network (test_contract.ContractTests.test_all_manual_operations_work_without_network) (entity='snapshot') ... ERROR
+test_persisted_domain_entities_match_versioned_schema (test_contract.ContractTests.test_persisted_domain_entities_match_versioned_schema) ... 
+  test_persisted_domain_entities_match_versioned_schema (test_contract.ContractTests.test_persisted_domain_entities_match_versioned_schema) (entity='project') ... ERROR
+  test_persisted_domain_entities_match_versioned_schema (test_contract.ContractTests.test_persisted_domain_entities_match_versioned_schema) (entity='study') ... ERROR
+  test_persisted_domain_entities_match_versioned_schema (test_contract.ContractTests.test_persisted_domain_entities_match_versioned_schema) (entity='series') ... ERROR
+  test_persisted_domain_entities_match_versioned_schema (test_contract.ContractTests.test_persisted_domain_entities_match_versioned_schema) (entity='draft') ... ERROR
+  test_persisted_domain_entities_match_versioned_schema (test_contract.ContractTests.test_persisted_domain_entities_match_versioned_schema) (entity='finding') ... ERROR
+  test_persisted_domain_entities_match_versioned_schema (test_contract.ContractTests.test_persisted_domain_entities_match_versioned_schema) (entity='snapshot') ... ERROR
+test_A08_counts_zero_denominator_hashes_bom_and_lookup (test_export.ExportTests.test_A08_counts_zero_denominator_hashes_bom_and_lookup) ... ERROR
+test_snapshot_and_project_boundaries_and_unique_packages (test_export.ExportTests.test_snapshot_and_project_boundaries_and_unique_packages) ... ok
+test_write_failure_never_reports_partial_success (test_export.ExportTests.test_write_failure_never_reports_partial_success) ... ok
+test_A01_geometry_order_dedup_and_project_isolation (test_import.ImportTests.test_A01_geometry_order_dedup_and_project_isolation) ... ok
+test_conflicting_uid_rejects_atomic_import (test_import.ImportTests.test_conflicting_uid_rejects_atomic_import) ... ok
+test_nonuniform_tilt_missing_geometry_and_contrast_are_blocked (test_import.ImportTests.test_nonuniform_tilt_missing_geometry_and_contrast_are_blocked) ... ok
+test_persistence_and_source_mapping (test_import.ImportTests.test_persistence_and_source_mapping) ... ok
+test_phi_name_and_burned_pixels_rejected (test_import.ImportTests.test_phi_name_and_burned_pixels_rejected) ... ok
+test_requires_authorization_and_allowed_directory (test_import.ImportTests.test_requires_authorization_and_allowed_directory) ... ok
+test_A05_missing_failure_and_true_zero_are_distinct (test_model.ModelTests.test_A05_missing_failure_and_true_zero_are_distinct) ... ok
+test_new_run_cannot_overwrite_review_branch (test_model.ModelTests.test_new_run_cannot_overwrite_review_branch) ... ok
+test_partial_results_rejected_and_request_is_idempotent (test_model.ModelTests.test_partial_results_rejected_and_request_is_idempotent) ... ok
+test_real_adapter_refuses_missing_weights (test_model.ModelTests.test_real_adapter_refuses_missing_weights) ... ok
+test_restart_marks_interrupted_task_failed_not_zero (test_model.ModelTests.test_restart_marks_interrupted_task_failed_not_zero) ... FAIL
+test_A03_10mm_6mm_physical_endpoints (test_review.ReviewTests.test_A03_10mm_6mm_physical_endpoints) ... ok
+test_A06_three_test_candidates_plus_manual (test_review.ReviewTests.test_A06_three_test_candidates_plus_manual) ... ok
+test_A07_stale_revision_undo_reopen_and_immutable_snapshot (test_review.ReviewTests.test_A07_stale_revision_undo_reopen_and_immutable_snapshot) ... ok
+test_display_numbers_remain_stable_after_more_findings_and_restart (test_review.ReviewTests.test_display_numbers_remain_stable_after_more_findings_and_restart) ... ok
+test_measurement_constraints_and_completion_reasons (test_review.ReviewTests.test_measurement_constraints_and_completion_reasons) ... ok
+test_zero_confirmation_requires_explicit_confirmation (test_review.ReviewTests.test_zero_confirmation_requires_explicit_confirmation) ... ok
+test_A02_original_lps_roundtrip_and_coronal_position (test_viewer.ViewerTests.test_A02_original_lps_roundtrip_and_coronal_position) ... ok
+test_http_loopback_csrf_and_no_source_path_leak (test_viewer.ViewerTests.test_http_loopback_csrf_and_no_source_path_leak) ... ok
+test_reversed_orientation_is_not_screen_side_guess (test_viewer.ViewerTests.test_reversed_orientation_is_not_screen_side_guess) ... ok
+
+======================================================================
+ERROR: test_all_manual_operations_work_without_network (test_contract.ContractTests.test_all_manual_operations_work_without_network) (entity='project')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_contract.py", line 25, in test_persisted_domain_entities_match_versioned_schema
+    with self.subTest(entity=entity):validator.validate(item)
+                                     ~~~~~~~~~~~~~~~~~~^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 450, in validate
+    raise error
+jsonschema.exceptions.ValidationError: Additional properties are not allowed ('selected_series' was unexpected)
+
+Failed validating 'additionalProperties' in schema:
+    {'type': 'object',
+     'additionalProperties': False,
+     'properties': {'project_id': {'type': 'string'},
+                    'name': {'type': 'string'},
+                    'operator': {'type': 'string'},
+                    'created_at': {'type': 'string',
+                                   'format': 'date-time'}},
+     'required': ['project_id', 'name', 'operator', 'created_at']}
+
+On instance:
+    {'created_at': '2026-11-03T06:16:48.137713+00:00',
+     'name': 'P',
+     'operator': 'OP',
+     'project_id': 'project_cf2a91e2564f42d393c765ace5a86b06',
+     'selected_series': 'series_fc2f88474cb5d7e22d90a170'}
+
+======================================================================
+ERROR: test_all_manual_operations_work_without_network (test_contract.ContractTests.test_all_manual_operations_work_without_network) (entity='study')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\.venv\Lib\site-packages\referencing\_core.py", line 276, in pointer
+    contents = contents[segment]  # type: ignore[reportUnknownArgumentType]
+               ~~~~~~~~^^^^^^^^^
+KeyError: 'study'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 462, in _validate_reference
+    resolved = self._resolver.lookup(ref)
+  File "D:\STN02\DMT\.venv\Lib\site-packages\referencing\_core.py", line 690, in lookup
+    return retrieved.value.pointer(pointer=fragment, resolver=resolver)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\referencing\_core.py", line 279, in pointer
+    raise error from lookup_error
+referencing.exceptions.PointerToNowhere: '/$defs/study' does not exist within {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'urn:dmt:lungct:v1', 'title': '�ν�� P0 ������Լ', '$defs': {'project': {'type': 'object', 'additionalProperties': False, 'properties': {'project_id': {'type': 'string'}, 'name': {'type': 'string'}, 'operator': {'type': 'string'}, 'created_at': {'type': 'string', 'format': 'date-time'}}, 'required': ['project_id', 'name', 'operator', 'created_at']}, 'source': {'type': 'object', 'additionalProperties': False, 'properties': {'source_code': {'type': 'string'}, 'authorized': {'const': True}, 'deidentified': {'const': True}, 'pixels_checked': {'const': True}, 'adult_chest': {'const': True}, 'noncontrast': {'const': True}, 'research_source': {'enum': ['screening', 'non_screening', 'unknown']}}, 'required': ['source_code', 'authorized', 'deidentified', 'pixels_checked', 'adult_chest', 'noncontrast', 'research_source']}, 'finding': {'type': 'object', 'additionalProperties': False, 'properties': {'finding_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'source': {'enum': ['ai', 'manual']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'box_lps': {'type': ['array', 'null'], 'items': {'type': 'number'}, 'minItems': 6, 'maxItems': 6}, 'score': {'type': ['number', 'null'], 'minimum': 0, 'maximum': 1}}, 'required': ['finding_id', 'series_key', 'run_id', 'source', 'center_lps', 'slice_key', 'box_lps', 'score']}, 'revision': {'type': 'object', 'additionalProperties': False, 'properties': {'revision_id': {'type': 'string'}, 'finding_id': {'type': 'string'}, 'previous_revision_id': {'type': ['string', 'null']}, 'operator': {'type': 'string'}, 'at': {'type': 'string', 'format': 'date-time'}, 'action': {'type': 'string'}, 'state': {'enum': ['pending', 'confirmed', 'excluded', 'uncertain']}, 'reason': {'type': ['string', 'null']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'side': {'enum': ['left', 'right', 'unknown']}, 'lobe': {'enum': ['RUL', 'RML', 'RLL', 'LUL', 'LLL', 'unknown']}, 'nodule_type': {'enum': ['solid', 'part_solid', 'ground_glass', 'unknown']}, 'long_axis': {'type': ['object', 'null']}, 'short_axis': {'type': ['object', 'null']}, 'missing_reason': {'type': ['string', 'null']}}, 'required': ['revision_id', 'finding_id', 'previous_revision_id', 'operator', 'at', 'action', 'state', 'reason', 'center_lps', 'slice_key', 'side', 'lobe', 'nodule_type', 'long_axis', 'short_axis', 'missing_reason']}, 'run': {'type': 'object', 'additionalProperties': False, 'properties': {'run_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'state': {'enum': ['queued', 'running', 'succeeded', 'failed']}, 'complete': {'type': 'boolean'}, 'input_sha256': {'type': 'string'}, 'model': {'type': 'object'}, 'error_code': {'type': ['string', 'null']}, 'candidate_count': {'type': ['integer', 'null'], 'minimum': 0}}, 'required': ['run_id', 'series_key', 'state', 'complete', 'input_sha256', 'model', 'error_code', 'candidate_count']}, 'snapshot': {'type': 'object', 'additionalProperties': False, 'properties': {'snapshot_id': {'type': 'string'}, 'project_id': {'type': 'string'}, 'study_key': {'type': 'string'}, 'series_key': {'type': 'string'}, 'draft_id': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'analysis_mode': {'enum': ['manual', 'ai']}, 'completed_at': {'type': 'string', 'format': 'date-time'}, 'operator': {'type': 'string'}, 'findings': {'type': 'array'}, 'revisions': {'type': 'array'}, 'counts': {'type': 'object'}, 'sha256': {'type': 'string'}}, 'required': ['snapshot_id', 'project_id', 'study_key', 'series_key', 'draft_id', 'run_id', 'analysis_mode', 'completed_at', 'operator', 'findings', 'revisions', 'counts', 'sha256']}}, '$ref': '#/$defs/study'}
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_contract.py", line 25, in test_persisted_domain_entities_match_versioned_schema
+    with self.subTest(entity=entity):validator.validate(item)
+                                     ~~~~~~~~~~~~~~~~~~^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 449, in validate
+    for error in self.iter_errors(*args, **kwargs):
+                 ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 383, in iter_errors
+    for error in errors:
+                 ^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\_keywords.py", line 275, in ref
+    yield from validator._validate_reference(ref=ref, instance=instance)
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 464, in _validate_reference
+    raise exceptions._WrappedReferencingError(err) from err
+jsonschema.exceptions._WrappedReferencingError: PointerToNowhere: '/$defs/study' does not exist within {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'urn:dmt:lungct:v1', 'title': '�ν�� P0 ������Լ', '$defs': {'project': {'type': 'object', 'additionalProperties': False, 'properties': {'project_id': {'type': 'string'}, 'name': {'type': 'string'}, 'operator': {'type': 'string'}, 'created_at': {'type': 'string', 'format': 'date-time'}}, 'required': ['project_id', 'name', 'operator', 'created_at']}, 'source': {'type': 'object', 'additionalProperties': False, 'properties': {'source_code': {'type': 'string'}, 'authorized': {'const': True}, 'deidentified': {'const': True}, 'pixels_checked': {'const': True}, 'adult_chest': {'const': True}, 'noncontrast': {'const': True}, 'research_source': {'enum': ['screening', 'non_screening', 'unknown']}}, 'required': ['source_code', 'authorized', 'deidentified', 'pixels_checked', 'adult_chest', 'noncontrast', 'research_source']}, 'finding': {'type': 'object', 'additionalProperties': False, 'properties': {'finding_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'source': {'enum': ['ai', 'manual']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'box_lps': {'type': ['array', 'null'], 'items': {'type': 'number'}, 'minItems': 6, 'maxItems': 6}, 'score': {'type': ['number', 'null'], 'minimum': 0, 'maximum': 1}}, 'required': ['finding_id', 'series_key', 'run_id', 'source', 'center_lps', 'slice_key', 'box_lps', 'score']}, 'revision': {'type': 'object', 'additionalProperties': False, 'properties': {'revision_id': {'type': 'string'}, 'finding_id': {'type': 'string'}, 'previous_revision_id': {'type': ['string', 'null']}, 'operator': {'type': 'string'}, 'at': {'type': 'string', 'format': 'date-time'}, 'action': {'type': 'string'}, 'state': {'enum': ['pending', 'confirmed', 'excluded', 'uncertain']}, 'reason': {'type': ['string', 'null']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'side': {'enum': ['left', 'right', 'unknown']}, 'lobe': {'enum': ['RUL', 'RML', 'RLL', 'LUL', 'LLL', 'unknown']}, 'nodule_type': {'enum': ['solid', 'part_solid', 'ground_glass', 'unknown']}, 'long_axis': {'type': ['object', 'null']}, 'short_axis': {'type': ['object', 'null']}, 'missing_reason': {'type': ['string', 'null']}}, 'required': ['revision_id', 'finding_id', 'previous_revision_id', 'operator', 'at', 'action', 'state', 'reason', 'center_lps', 'slice_key', 'side', 'lobe', 'nodule_type', 'long_axis', 'short_axis', 'missing_reason']}, 'run': {'type': 'object', 'additionalProperties': False, 'properties': {'run_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'state': {'enum': ['queued', 'running', 'succeeded', 'failed']}, 'complete': {'type': 'boolean'}, 'input_sha256': {'type': 'string'}, 'model': {'type': 'object'}, 'error_code': {'type': ['string', 'null']}, 'candidate_count': {'type': ['integer', 'null'], 'minimum': 0}}, 'required': ['run_id', 'series_key', 'state', 'complete', 'input_sha256', 'model', 'error_code', 'candidate_count']}, 'snapshot': {'type': 'object', 'additionalProperties': False, 'properties': {'snapshot_id': {'type': 'string'}, 'project_id': {'type': 'string'}, 'study_key': {'type': 'string'}, 'series_key': {'type': 'string'}, 'draft_id': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'analysis_mode': {'enum': ['manual', 'ai']}, 'completed_at': {'type': 'string', 'format': 'date-time'}, 'operator': {'type': 'string'}, 'findings': {'type': 'array'}, 'revisions': {'type': 'array'}, 'counts': {'type': 'object'}, 'sha256': {'type': 'string'}}, 'required': ['snapshot_id', 'project_id', 'study_key', 'series_key', 'draft_id', 'run_id', 'analysis_mode', 'completed_at', 'operator', 'findings', 'revisions', 'counts', 'sha256']}}, '$ref': '#/$defs/study'}
+
+======================================================================
+ERROR: test_all_manual_operations_work_without_network (test_contract.ContractTests.test_all_manual_operations_work_without_network) (entity='series')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\.venv\Lib\site-packages\referencing\_core.py", line 276, in pointer
+    contents = contents[segment]  # type: ignore[reportUnknownArgumentType]
+               ~~~~~~~~^^^^^^^^^
+KeyError: 'series'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 462, in _validate_reference
+    resolved = self._resolver.lookup(ref)
+  File "D:\STN02\DMT\.venv\Lib\site-packages\referencing\_core.py", line 690, in lookup
+    return retrieved.value.pointer(pointer=fragment, resolver=resolver)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\referencing\_core.py", line 279, in pointer
+    raise error from lookup_error
+referencing.exceptions.PointerToNowhere: '/$defs/series' does not exist within {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'urn:dmt:lungct:v1', 'title': '�ν�� P0 ������Լ', '$defs': {'project': {'type': 'object', 'additionalProperties': False, 'properties': {'project_id': {'type': 'string'}, 'name': {'type': 'string'}, 'operator': {'type': 'string'}, 'created_at': {'type': 'string', 'format': 'date-time'}}, 'required': ['project_id', 'name', 'operator', 'created_at']}, 'source': {'type': 'object', 'additionalProperties': False, 'properties': {'source_code': {'type': 'string'}, 'authorized': {'const': True}, 'deidentified': {'const': True}, 'pixels_checked': {'const': True}, 'adult_chest': {'const': True}, 'noncontrast': {'const': True}, 'research_source': {'enum': ['screening', 'non_screening', 'unknown']}}, 'required': ['source_code', 'authorized', 'deidentified', 'pixels_checked', 'adult_chest', 'noncontrast', 'research_source']}, 'finding': {'type': 'object', 'additionalProperties': False, 'properties': {'finding_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'source': {'enum': ['ai', 'manual']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'box_lps': {'type': ['array', 'null'], 'items': {'type': 'number'}, 'minItems': 6, 'maxItems': 6}, 'score': {'type': ['number', 'null'], 'minimum': 0, 'maximum': 1}}, 'required': ['finding_id', 'series_key', 'run_id', 'source', 'center_lps', 'slice_key', 'box_lps', 'score']}, 'revision': {'type': 'object', 'additionalProperties': False, 'properties': {'revision_id': {'type': 'string'}, 'finding_id': {'type': 'string'}, 'previous_revision_id': {'type': ['string', 'null']}, 'operator': {'type': 'string'}, 'at': {'type': 'string', 'format': 'date-time'}, 'action': {'type': 'string'}, 'state': {'enum': ['pending', 'confirmed', 'excluded', 'uncertain']}, 'reason': {'type': ['string', 'null']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'side': {'enum': ['left', 'right', 'unknown']}, 'lobe': {'enum': ['RUL', 'RML', 'RLL', 'LUL', 'LLL', 'unknown']}, 'nodule_type': {'enum': ['solid', 'part_solid', 'ground_glass', 'unknown']}, 'long_axis': {'type': ['object', 'null']}, 'short_axis': {'type': ['object', 'null']}, 'missing_reason': {'type': ['string', 'null']}}, 'required': ['revision_id', 'finding_id', 'previous_revision_id', 'operator', 'at', 'action', 'state', 'reason', 'center_lps', 'slice_key', 'side', 'lobe', 'nodule_type', 'long_axis', 'short_axis', 'missing_reason']}, 'run': {'type': 'object', 'additionalProperties': False, 'properties': {'run_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'state': {'enum': ['queued', 'running', 'succeeded', 'failed']}, 'complete': {'type': 'boolean'}, 'input_sha256': {'type': 'string'}, 'model': {'type': 'object'}, 'error_code': {'type': ['string', 'null']}, 'candidate_count': {'type': ['integer', 'null'], 'minimum': 0}}, 'required': ['run_id', 'series_key', 'state', 'complete', 'input_sha256', 'model', 'error_code', 'candidate_count']}, 'snapshot': {'type': 'object', 'additionalProperties': False, 'properties': {'snapshot_id': {'type': 'string'}, 'project_id': {'type': 'string'}, 'study_key': {'type': 'string'}, 'series_key': {'type': 'string'}, 'draft_id': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'analysis_mode': {'enum': ['manual', 'ai']}, 'completed_at': {'type': 'string', 'format': 'date-time'}, 'operator': {'type': 'string'}, 'findings': {'type': 'array'}, 'revisions': {'type': 'array'}, 'counts': {'type': 'object'}, 'sha256': {'type': 'string'}}, 'required': ['snapshot_id', 'project_id', 'study_key', 'series_key', 'draft_id', 'run_id', 'analysis_mode', 'completed_at', 'operator', 'findings', 'revisions', 'counts', 'sha256']}}, '$ref': '#/$defs/series'}
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_contract.py", line 25, in test_persisted_domain_entities_match_versioned_schema
+    with self.subTest(entity=entity):validator.validate(item)
+                                     ~~~~~~~~~~~~~~~~~~^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 449, in validate
+    for error in self.iter_errors(*args, **kwargs):
+                 ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 383, in iter_errors
+    for error in errors:
+                 ^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\_keywords.py", line 275, in ref
+    yield from validator._validate_reference(ref=ref, instance=instance)
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 464, in _validate_reference
+    raise exceptions._WrappedReferencingError(err) from err
+jsonschema.exceptions._WrappedReferencingError: PointerToNowhere: '/$defs/series' does not exist within {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'urn:dmt:lungct:v1', 'title': '�ν�� P0 ������Լ', '$defs': {'project': {'type': 'object', 'additionalProperties': False, 'properties': {'project_id': {'type': 'string'}, 'name': {'type': 'string'}, 'operator': {'type': 'string'}, 'created_at': {'type': 'string', 'format': 'date-time'}}, 'required': ['project_id', 'name', 'operator', 'created_at']}, 'source': {'type': 'object', 'additionalProperties': False, 'properties': {'source_code': {'type': 'string'}, 'authorized': {'const': True}, 'deidentified': {'const': True}, 'pixels_checked': {'const': True}, 'adult_chest': {'const': True}, 'noncontrast': {'const': True}, 'research_source': {'enum': ['screening', 'non_screening', 'unknown']}}, 'required': ['source_code', 'authorized', 'deidentified', 'pixels_checked', 'adult_chest', 'noncontrast', 'research_source']}, 'finding': {'type': 'object', 'additionalProperties': False, 'properties': {'finding_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'source': {'enum': ['ai', 'manual']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'box_lps': {'type': ['array', 'null'], 'items': {'type': 'number'}, 'minItems': 6, 'maxItems': 6}, 'score': {'type': ['number', 'null'], 'minimum': 0, 'maximum': 1}}, 'required': ['finding_id', 'series_key', 'run_id', 'source', 'center_lps', 'slice_key', 'box_lps', 'score']}, 'revision': {'type': 'object', 'additionalProperties': False, 'properties': {'revision_id': {'type': 'string'}, 'finding_id': {'type': 'string'}, 'previous_revision_id': {'type': ['string', 'null']}, 'operator': {'type': 'string'}, 'at': {'type': 'string', 'format': 'date-time'}, 'action': {'type': 'string'}, 'state': {'enum': ['pending', 'confirmed', 'excluded', 'uncertain']}, 'reason': {'type': ['string', 'null']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'side': {'enum': ['left', 'right', 'unknown']}, 'lobe': {'enum': ['RUL', 'RML', 'RLL', 'LUL', 'LLL', 'unknown']}, 'nodule_type': {'enum': ['solid', 'part_solid', 'ground_glass', 'unknown']}, 'long_axis': {'type': ['object', 'null']}, 'short_axis': {'type': ['object', 'null']}, 'missing_reason': {'type': ['string', 'null']}}, 'required': ['revision_id', 'finding_id', 'previous_revision_id', 'operator', 'at', 'action', 'state', 'reason', 'center_lps', 'slice_key', 'side', 'lobe', 'nodule_type', 'long_axis', 'short_axis', 'missing_reason']}, 'run': {'type': 'object', 'additionalProperties': False, 'properties': {'run_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'state': {'enum': ['queued', 'running', 'succeeded', 'failed']}, 'complete': {'type': 'boolean'}, 'input_sha256': {'type': 'string'}, 'model': {'type': 'object'}, 'error_code': {'type': ['string', 'null']}, 'candidate_count': {'type': ['integer', 'null'], 'minimum': 0}}, 'required': ['run_id', 'series_key', 'state', 'complete', 'input_sha256', 'model', 'error_code', 'candidate_count']}, 'snapshot': {'type': 'object', 'additionalProperties': False, 'properties': {'snapshot_id': {'type': 'string'}, 'project_id': {'type': 'string'}, 'study_key': {'type': 'string'}, 'series_key': {'type': 'string'}, 'draft_id': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'analysis_mode': {'enum': ['manual', 'ai']}, 'completed_at': {'type': 'string', 'format': 'date-time'}, 'operator': {'type': 'string'}, 'findings': {'type': 'array'}, 'revisions': {'type': 'array'}, 'counts': {'type': 'object'}, 'sha256': {'type': 'string'}}, 'required': ['snapshot_id', 'project_id', 'study_key', 'series_key', 'draft_id', 'run_id', 'analysis_mode', 'completed_at', 'operator', 'findings', 'revisions', 'counts', 'sha256']}}, '$ref': '#/$defs/series'}
+
+======================================================================
+ERROR: test_all_manual_operations_work_without_network (test_contract.ContractTests.test_all_manual_operations_work_without_network) (entity='draft')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\.venv\Lib\site-packages\referencing\_core.py", line 276, in pointer
+    contents = contents[segment]  # type: ignore[reportUnknownArgumentType]
+               ~~~~~~~~^^^^^^^^^
+KeyError: 'draft'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 462, in _validate_reference
+    resolved = self._resolver.lookup(ref)
+  File "D:\STN02\DMT\.venv\Lib\site-packages\referencing\_core.py", line 690, in lookup
+    return retrieved.value.pointer(pointer=fragment, resolver=resolver)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\referencing\_core.py", line 279, in pointer
+    raise error from lookup_error
+referencing.exceptions.PointerToNowhere: '/$defs/draft' does not exist within {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'urn:dmt:lungct:v1', 'title': '�ν�� P0 ������Լ', '$defs': {'project': {'type': 'object', 'additionalProperties': False, 'properties': {'project_id': {'type': 'string'}, 'name': {'type': 'string'}, 'operator': {'type': 'string'}, 'created_at': {'type': 'string', 'format': 'date-time'}}, 'required': ['project_id', 'name', 'operator', 'created_at']}, 'source': {'type': 'object', 'additionalProperties': False, 'properties': {'source_code': {'type': 'string'}, 'authorized': {'const': True}, 'deidentified': {'const': True}, 'pixels_checked': {'const': True}, 'adult_chest': {'const': True}, 'noncontrast': {'const': True}, 'research_source': {'enum': ['screening', 'non_screening', 'unknown']}}, 'required': ['source_code', 'authorized', 'deidentified', 'pixels_checked', 'adult_chest', 'noncontrast', 'research_source']}, 'finding': {'type': 'object', 'additionalProperties': False, 'properties': {'finding_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'source': {'enum': ['ai', 'manual']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'box_lps': {'type': ['array', 'null'], 'items': {'type': 'number'}, 'minItems': 6, 'maxItems': 6}, 'score': {'type': ['number', 'null'], 'minimum': 0, 'maximum': 1}}, 'required': ['finding_id', 'series_key', 'run_id', 'source', 'center_lps', 'slice_key', 'box_lps', 'score']}, 'revision': {'type': 'object', 'additionalProperties': False, 'properties': {'revision_id': {'type': 'string'}, 'finding_id': {'type': 'string'}, 'previous_revision_id': {'type': ['string', 'null']}, 'operator': {'type': 'string'}, 'at': {'type': 'string', 'format': 'date-time'}, 'action': {'type': 'string'}, 'state': {'enum': ['pending', 'confirmed', 'excluded', 'uncertain']}, 'reason': {'type': ['string', 'null']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'side': {'enum': ['left', 'right', 'unknown']}, 'lobe': {'enum': ['RUL', 'RML', 'RLL', 'LUL', 'LLL', 'unknown']}, 'nodule_type': {'enum': ['solid', 'part_solid', 'ground_glass', 'unknown']}, 'long_axis': {'type': ['object', 'null']}, 'short_axis': {'type': ['object', 'null']}, 'missing_reason': {'type': ['string', 'null']}}, 'required': ['revision_id', 'finding_id', 'previous_revision_id', 'operator', 'at', 'action', 'state', 'reason', 'center_lps', 'slice_key', 'side', 'lobe', 'nodule_type', 'long_axis', 'short_axis', 'missing_reason']}, 'run': {'type': 'object', 'additionalProperties': False, 'properties': {'run_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'state': {'enum': ['queued', 'running', 'succeeded', 'failed']}, 'complete': {'type': 'boolean'}, 'input_sha256': {'type': 'string'}, 'model': {'type': 'object'}, 'error_code': {'type': ['string', 'null']}, 'candidate_count': {'type': ['integer', 'null'], 'minimum': 0}}, 'required': ['run_id', 'series_key', 'state', 'complete', 'input_sha256', 'model', 'error_code', 'candidate_count']}, 'snapshot': {'type': 'object', 'additionalProperties': False, 'properties': {'snapshot_id': {'type': 'string'}, 'project_id': {'type': 'string'}, 'study_key': {'type': 'string'}, 'series_key': {'type': 'string'}, 'draft_id': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'analysis_mode': {'enum': ['manual', 'ai']}, 'completed_at': {'type': 'string', 'format': 'date-time'}, 'operator': {'type': 'string'}, 'findings': {'type': 'array'}, 'revisions': {'type': 'array'}, 'counts': {'type': 'object'}, 'sha256': {'type': 'string'}}, 'required': ['snapshot_id', 'project_id', 'study_key', 'series_key', 'draft_id', 'run_id', 'analysis_mode', 'completed_at', 'operator', 'findings', 'revisions', 'counts', 'sha256']}}, '$ref': '#/$defs/draft'}
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_contract.py", line 25, in test_persisted_domain_entities_match_versioned_schema
+    with self.subTest(entity=entity):validator.validate(item)
+                                     ~~~~~~~~~~~~~~~~~~^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 449, in validate
+    for error in self.iter_errors(*args, **kwargs):
+                 ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 383, in iter_errors
+    for error in errors:
+                 ^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\_keywords.py", line 275, in ref
+    yield from validator._validate_reference(ref=ref, instance=instance)
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 464, in _validate_reference
+    raise exceptions._WrappedReferencingError(err) from err
+jsonschema.exceptions._WrappedReferencingError: PointerToNowhere: '/$defs/draft' does not exist within {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'urn:dmt:lungct:v1', 'title': '�ν�� P0 ������Լ', '$defs': {'project': {'type': 'object', 'additionalProperties': False, 'properties': {'project_id': {'type': 'string'}, 'name': {'type': 'string'}, 'operator': {'type': 'string'}, 'created_at': {'type': 'string', 'format': 'date-time'}}, 'required': ['project_id', 'name', 'operator', 'created_at']}, 'source': {'type': 'object', 'additionalProperties': False, 'properties': {'source_code': {'type': 'string'}, 'authorized': {'const': True}, 'deidentified': {'const': True}, 'pixels_checked': {'const': True}, 'adult_chest': {'const': True}, 'noncontrast': {'const': True}, 'research_source': {'enum': ['screening', 'non_screening', 'unknown']}}, 'required': ['source_code', 'authorized', 'deidentified', 'pixels_checked', 'adult_chest', 'noncontrast', 'research_source']}, 'finding': {'type': 'object', 'additionalProperties': False, 'properties': {'finding_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'source': {'enum': ['ai', 'manual']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'box_lps': {'type': ['array', 'null'], 'items': {'type': 'number'}, 'minItems': 6, 'maxItems': 6}, 'score': {'type': ['number', 'null'], 'minimum': 0, 'maximum': 1}}, 'required': ['finding_id', 'series_key', 'run_id', 'source', 'center_lps', 'slice_key', 'box_lps', 'score']}, 'revision': {'type': 'object', 'additionalProperties': False, 'properties': {'revision_id': {'type': 'string'}, 'finding_id': {'type': 'string'}, 'previous_revision_id': {'type': ['string', 'null']}, 'operator': {'type': 'string'}, 'at': {'type': 'string', 'format': 'date-time'}, 'action': {'type': 'string'}, 'state': {'enum': ['pending', 'confirmed', 'excluded', 'uncertain']}, 'reason': {'type': ['string', 'null']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'side': {'enum': ['left', 'right', 'unknown']}, 'lobe': {'enum': ['RUL', 'RML', 'RLL', 'LUL', 'LLL', 'unknown']}, 'nodule_type': {'enum': ['solid', 'part_solid', 'ground_glass', 'unknown']}, 'long_axis': {'type': ['object', 'null']}, 'short_axis': {'type': ['object', 'null']}, 'missing_reason': {'type': ['string', 'null']}}, 'required': ['revision_id', 'finding_id', 'previous_revision_id', 'operator', 'at', 'action', 'state', 'reason', 'center_lps', 'slice_key', 'side', 'lobe', 'nodule_type', 'long_axis', 'short_axis', 'missing_reason']}, 'run': {'type': 'object', 'additionalProperties': False, 'properties': {'run_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'state': {'enum': ['queued', 'running', 'succeeded', 'failed']}, 'complete': {'type': 'boolean'}, 'input_sha256': {'type': 'string'}, 'model': {'type': 'object'}, 'error_code': {'type': ['string', 'null']}, 'candidate_count': {'type': ['integer', 'null'], 'minimum': 0}}, 'required': ['run_id', 'series_key', 'state', 'complete', 'input_sha256', 'model', 'error_code', 'candidate_count']}, 'snapshot': {'type': 'object', 'additionalProperties': False, 'properties': {'snapshot_id': {'type': 'string'}, 'project_id': {'type': 'string'}, 'study_key': {'type': 'string'}, 'series_key': {'type': 'string'}, 'draft_id': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'analysis_mode': {'enum': ['manual', 'ai']}, 'completed_at': {'type': 'string', 'format': 'date-time'}, 'operator': {'type': 'string'}, 'findings': {'type': 'array'}, 'revisions': {'type': 'array'}, 'counts': {'type': 'object'}, 'sha256': {'type': 'string'}}, 'required': ['snapshot_id', 'project_id', 'study_key', 'series_key', 'draft_id', 'run_id', 'analysis_mode', 'completed_at', 'operator', 'findings', 'revisions', 'counts', 'sha256']}}, '$ref': '#/$defs/draft'}
+
+======================================================================
+ERROR: test_all_manual_operations_work_without_network (test_contract.ContractTests.test_all_manual_operations_work_without_network) (entity='finding')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_contract.py", line 25, in test_persisted_domain_entities_match_versioned_schema
+    with self.subTest(entity=entity):validator.validate(item)
+                                     ~~~~~~~~~~~~~~~~~~^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 450, in validate
+    raise error
+jsonschema.exceptions.ValidationError: Additional properties are not allowed ('label', 'project_id' were unexpected)
+
+Failed validating 'additionalProperties' in schema:
+    {'type': 'object',
+     'additionalProperties': False,
+     'properties': {'finding_id': {'type': 'string'},
+                    'series_key': {'type': 'string'},
+                    'run_id': {'type': ['string', 'null']},
+                    'source': {'enum': ['ai', 'manual']},
+                    'center_lps': {'type': 'array',
+                                   'items': {'type': 'number'},
+                                   'minItems': 3,
+                                   'maxItems': 3},
+                    'slice_key': {'type': 'string'},
+                    'box_lps': {'type': ['array', 'null'],
+                                'items': {'type': 'number'},
+                                'minItems': 6,
+                                'maxItems': 6},
+                    'score': {'type': ['number', 'null'],
+                              'minimum': 0,
+                              'maximum': 1}},
+     'required': ['finding_id',
+                  'series_key',
+                  'run_id',
+                  'source',
+                  'center_lps',
+                  'slice_key',
+                  'box_lps',
+                  'score']}
+
+On instance:
+    {'box_lps': None,
+     'center_lps': [-6, -3, 6],
+     'finding_id': 'finding_c987a11b631b422190fdde0c5269c59b',
+     'label': 'N-001',
+     'project_id': 'project_cf2a91e2564f42d393c765ace5a86b06',
+     'run_id': None,
+     'score': None,
+     'series_key': 'series_fc2f88474cb5d7e22d90a170',
+     'slice_key': 'slice_97b041bd5b3d4969b35752b6',
+     'source': 'manual'}
+
+======================================================================
+ERROR: test_all_manual_operations_work_without_network (test_contract.ContractTests.test_all_manual_operations_work_without_network) (entity='snapshot')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_contract.py", line 25, in test_persisted_domain_entities_match_versioned_schema
+    with self.subTest(entity=entity):validator.validate(item)
+                                     ~~~~~~~~~~~~~~~~~~^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 450, in validate
+    raise error
+jsonschema.exceptions.ValidationError: Additional properties are not allowed ('heads', 'research_source', 'run', 'run_history', 'synthetic' were unexpected)
+
+Failed validating 'additionalProperties' in schema:
+    {'type': 'object',
+     'additionalProperties': False,
+     'properties': {'snapshot_id': {'type': 'string'},
+                    'project_id': {'type': 'string'},
+                    'study_key': {'type': 'string'},
+                    'series_key': {'type': 'string'},
+                    'draft_id': {'type': 'string'},
+                    'run_id': {'type': ['string', 'null']},
+                    'analysis_mode': {'enum': ['manual', 'ai']},
+                    'completed_at': {'type': 'string',
+                                     'format': 'date-time'},
+                    'operator': {'type': 'string'},
+                    'findings': {'type': 'array'},
+                    'revisions': {'type': 'array'},
+                    'counts': {'type': 'object'},
+                    'sha256': {'type': 'string'}},
+     'required': ['snapshot_id',
+                  'project_id',
+                  'study_key',
+                  'series_key',
+                  'draft_id',
+                  'run_id',
+                  'analysis_mode',
+                  'completed_at',
+                  'operator',
+                  'findings',
+                  'revisions',
+                  'counts',
+                  'sha256']}
+
+On instance:
+    {'analysis_mode': 'manual',
+     'completed_at': '2026-11-03T06:16:48.221150+00:00',
+     'counts': {'ai': 0,
+                'confirmed': 1,
+                'excluded': 0,
+                'manual': 1,
+                'pending': 0,
+                'uncertain': 0},
+     'draft_id': 'draft_da2cb1b1c5464c1a8de98f2042711d6b',
+     'findings': [{'finding_id': 'finding_c987a11b631b422190fdde0c5269c59b',
+                   'label': 'N-001',
+                   'original': {'box_lps': None,
+                                'center_lps': [-6, -3, 6],
+                                'finding_id': 'finding_c987a11b631b422190fdde0c5269c59b',
+                                'label': 'N-001',
+                                'project_id': 'project_cf2a91e2564f42d393c765ace5a86b06',
+                                'run_id': None,
+                                'score': None,
+                                'series_key': 'series_fc2f88474cb5d7e22d90a170',
+                                'slice_key': 'slice_97b041bd5b3d4969b35752b6',
+                                'source': 'manual'},
+                   'revision': {'action': 'revise',
+                                'at': '2026-11-03T06:16:48.212400+00:00',
+                                'center_lps': [-6.0, -3.0, 6.0],
+                                'finding_id': 'finding_c987a11b631b422190fdde0c5269c59b',
+                                'lobe': 'unknown',
+                                'long_axis': None,
+                                'missing_reason': 'not_measured',
+                                'nodule_type': 'unknown',
+                                'operator': 'OP',
+                                'previous_revision_id': 'revision_a4f4bb41eee6469fb74de63e7c028bfd',
+                                'reason': None,
+                                'revision_id': 'revision_ac9dd9761fac4e02aebd5d5c7f830ae4',
+                                'short_axis': None,
+                                'side': 'unknown',
+                                'slice_key': 'slice_97b041bd5b3d4969b35752b6',
+                                'state': 'confirmed'}}],
+     'heads': {'finding_c987a11b631b422190fdde0c5269c59b': 'revision_ac9dd9761fac4e02aebd5d5c7f830ae4'},
+     'operator': 'OP',
+     'project_id': 'project_cf2a91e2564f42d393c765ace5a86b06',
+     'research_source': 'unknown',
+     'revisions': [{'action': 'revise',
+                    'at': '2026-11-03T06:16:48.212400+00:00',
+                    'center_lps': [-6.0, -3.0, 6.0],
+                    'finding_id': 'finding_c987a11b631b422190fdde0c5269c59b',
+                    'lobe': 'unknown',
+                    'long_axis': None,
+                    'missing_reason': 'not_measured',
+                    'nodule_type': 'unknown',
+                    'operator': 'OP',
+                    'previous_revision_id': 'revision_a4f4bb41eee6469fb74de63e7c028bfd',
+                    'reason': None,
+                    'revision_id': 'revision_ac9dd9761fac4e02aebd5d5c7f830ae4',
+                    'short_axis': None,
+                    'side': 'unknown',
+                    'slice_key': 'slice_97b041bd5b3d4969b35752b6',
+                    'state': 'confirmed'},
+                   {'action': 'add',
+                    'at': '2026-11-03T06:16:48.206482+00:00',
+                    'center_lps': [-6.0, -3.0, 6.0],
+                    'finding_id': 'finding_c987a11b631b422190fdde0c5269c59b',
+                    'lobe': 'unknown',
+                    'long_axis': None,
+                    'missing_reason': None,
+                    'nodule_type': 'unknown',
+                    'operator': 'OP',
+                    'previous_revision_id': None,
+                    'reason': None,
+                    'revision_id': 'revision_a4f4bb41eee6469fb74de63e7c028bfd',
+                    'short_axis': None,
+                    'side': 'unknown',
+                    'slice_key': 'slice_97b041bd5b3d4969b35752b6',
+                    'state': 'pending'}],
+     'run': None,
+     'run_history': [],
+     'run_id': None,
+     'series_key': 'series_fc2f88474cb5d7e22d90a170',
+     'sha256': 'fc04b745ef4d071be1a06417feab0d0276d330eb9fdc1c0fd944994b67ed7212',
+     'snapshot_id': 'snapshot_66d2ebbf76014802b30769e8f0239219',
+     'study_key': 'study_882a30fd60d96e5fc4ddaf14',
+     'synthetic': True}
+
+======================================================================
+ERROR: test_persisted_domain_entities_match_versioned_schema (test_contract.ContractTests.test_persisted_domain_entities_match_versioned_schema) (entity='project')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_contract.py", line 25, in test_persisted_domain_entities_match_versioned_schema
+    with self.subTest(entity=entity):validator.validate(item)
+                                     ~~~~~~~~~~~~~~~~~~^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 450, in validate
+    raise error
+jsonschema.exceptions.ValidationError: Additional properties are not allowed ('selected_series' was unexpected)
+
+Failed validating 'additionalProperties' in schema:
+    {'type': 'object',
+     'additionalProperties': False,
+     'properties': {'project_id': {'type': 'string'},
+                    'name': {'type': 'string'},
+                    'operator': {'type': 'string'},
+                    'created_at': {'type': 'string',
+                                   'format': 'date-time'}},
+     'required': ['project_id', 'name', 'operator', 'created_at']}
+
+On instance:
+    {'created_at': '2026-11-03T06:16:48.338786+00:00',
+     'name': 'P',
+     'operator': 'OP',
+     'project_id': 'project_de4d2a2c0dc845e4a6c7816551424364',
+     'selected_series': 'series_604c26c24f4c0191df18163c'}
+
+======================================================================
+ERROR: test_persisted_domain_entities_match_versioned_schema (test_contract.ContractTests.test_persisted_domain_entities_match_versioned_schema) (entity='study')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\.venv\Lib\site-packages\referencing\_core.py", line 276, in pointer
+    contents = contents[segment]  # type: ignore[reportUnknownArgumentType]
+               ~~~~~~~~^^^^^^^^^
+KeyError: 'study'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 462, in _validate_reference
+    resolved = self._resolver.lookup(ref)
+  File "D:\STN02\DMT\.venv\Lib\site-packages\referencing\_core.py", line 690, in lookup
+    return retrieved.value.pointer(pointer=fragment, resolver=resolver)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\referencing\_core.py", line 279, in pointer
+    raise error from lookup_error
+referencing.exceptions.PointerToNowhere: '/$defs/study' does not exist within {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'urn:dmt:lungct:v1', 'title': '�ν�� P0 ������Լ', '$defs': {'project': {'type': 'object', 'additionalProperties': False, 'properties': {'project_id': {'type': 'string'}, 'name': {'type': 'string'}, 'operator': {'type': 'string'}, 'created_at': {'type': 'string', 'format': 'date-time'}}, 'required': ['project_id', 'name', 'operator', 'created_at']}, 'source': {'type': 'object', 'additionalProperties': False, 'properties': {'source_code': {'type': 'string'}, 'authorized': {'const': True}, 'deidentified': {'const': True}, 'pixels_checked': {'const': True}, 'adult_chest': {'const': True}, 'noncontrast': {'const': True}, 'research_source': {'enum': ['screening', 'non_screening', 'unknown']}}, 'required': ['source_code', 'authorized', 'deidentified', 'pixels_checked', 'adult_chest', 'noncontrast', 'research_source']}, 'finding': {'type': 'object', 'additionalProperties': False, 'properties': {'finding_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'source': {'enum': ['ai', 'manual']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'box_lps': {'type': ['array', 'null'], 'items': {'type': 'number'}, 'minItems': 6, 'maxItems': 6}, 'score': {'type': ['number', 'null'], 'minimum': 0, 'maximum': 1}}, 'required': ['finding_id', 'series_key', 'run_id', 'source', 'center_lps', 'slice_key', 'box_lps', 'score']}, 'revision': {'type': 'object', 'additionalProperties': False, 'properties': {'revision_id': {'type': 'string'}, 'finding_id': {'type': 'string'}, 'previous_revision_id': {'type': ['string', 'null']}, 'operator': {'type': 'string'}, 'at': {'type': 'string', 'format': 'date-time'}, 'action': {'type': 'string'}, 'state': {'enum': ['pending', 'confirmed', 'excluded', 'uncertain']}, 'reason': {'type': ['string', 'null']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'side': {'enum': ['left', 'right', 'unknown']}, 'lobe': {'enum': ['RUL', 'RML', 'RLL', 'LUL', 'LLL', 'unknown']}, 'nodule_type': {'enum': ['solid', 'part_solid', 'ground_glass', 'unknown']}, 'long_axis': {'type': ['object', 'null']}, 'short_axis': {'type': ['object', 'null']}, 'missing_reason': {'type': ['string', 'null']}}, 'required': ['revision_id', 'finding_id', 'previous_revision_id', 'operator', 'at', 'action', 'state', 'reason', 'center_lps', 'slice_key', 'side', 'lobe', 'nodule_type', 'long_axis', 'short_axis', 'missing_reason']}, 'run': {'type': 'object', 'additionalProperties': False, 'properties': {'run_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'state': {'enum': ['queued', 'running', 'succeeded', 'failed']}, 'complete': {'type': 'boolean'}, 'input_sha256': {'type': 'string'}, 'model': {'type': 'object'}, 'error_code': {'type': ['string', 'null']}, 'candidate_count': {'type': ['integer', 'null'], 'minimum': 0}}, 'required': ['run_id', 'series_key', 'state', 'complete', 'input_sha256', 'model', 'error_code', 'candidate_count']}, 'snapshot': {'type': 'object', 'additionalProperties': False, 'properties': {'snapshot_id': {'type': 'string'}, 'project_id': {'type': 'string'}, 'study_key': {'type': 'string'}, 'series_key': {'type': 'string'}, 'draft_id': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'analysis_mode': {'enum': ['manual', 'ai']}, 'completed_at': {'type': 'string', 'format': 'date-time'}, 'operator': {'type': 'string'}, 'findings': {'type': 'array'}, 'revisions': {'type': 'array'}, 'counts': {'type': 'object'}, 'sha256': {'type': 'string'}}, 'required': ['snapshot_id', 'project_id', 'study_key', 'series_key', 'draft_id', 'run_id', 'analysis_mode', 'completed_at', 'operator', 'findings', 'revisions', 'counts', 'sha256']}}, '$ref': '#/$defs/study'}
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_contract.py", line 25, in test_persisted_domain_entities_match_versioned_schema
+    with self.subTest(entity=entity):validator.validate(item)
+                                     ~~~~~~~~~~~~~~~~~~^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 449, in validate
+    for error in self.iter_errors(*args, **kwargs):
+                 ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 383, in iter_errors
+    for error in errors:
+                 ^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\_keywords.py", line 275, in ref
+    yield from validator._validate_reference(ref=ref, instance=instance)
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 464, in _validate_reference
+    raise exceptions._WrappedReferencingError(err) from err
+jsonschema.exceptions._WrappedReferencingError: PointerToNowhere: '/$defs/study' does not exist within {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'urn:dmt:lungct:v1', 'title': '�ν�� P0 ������Լ', '$defs': {'project': {'type': 'object', 'additionalProperties': False, 'properties': {'project_id': {'type': 'string'}, 'name': {'type': 'string'}, 'operator': {'type': 'string'}, 'created_at': {'type': 'string', 'format': 'date-time'}}, 'required': ['project_id', 'name', 'operator', 'created_at']}, 'source': {'type': 'object', 'additionalProperties': False, 'properties': {'source_code': {'type': 'string'}, 'authorized': {'const': True}, 'deidentified': {'const': True}, 'pixels_checked': {'const': True}, 'adult_chest': {'const': True}, 'noncontrast': {'const': True}, 'research_source': {'enum': ['screening', 'non_screening', 'unknown']}}, 'required': ['source_code', 'authorized', 'deidentified', 'pixels_checked', 'adult_chest', 'noncontrast', 'research_source']}, 'finding': {'type': 'object', 'additionalProperties': False, 'properties': {'finding_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'source': {'enum': ['ai', 'manual']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'box_lps': {'type': ['array', 'null'], 'items': {'type': 'number'}, 'minItems': 6, 'maxItems': 6}, 'score': {'type': ['number', 'null'], 'minimum': 0, 'maximum': 1}}, 'required': ['finding_id', 'series_key', 'run_id', 'source', 'center_lps', 'slice_key', 'box_lps', 'score']}, 'revision': {'type': 'object', 'additionalProperties': False, 'properties': {'revision_id': {'type': 'string'}, 'finding_id': {'type': 'string'}, 'previous_revision_id': {'type': ['string', 'null']}, 'operator': {'type': 'string'}, 'at': {'type': 'string', 'format': 'date-time'}, 'action': {'type': 'string'}, 'state': {'enum': ['pending', 'confirmed', 'excluded', 'uncertain']}, 'reason': {'type': ['string', 'null']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'side': {'enum': ['left', 'right', 'unknown']}, 'lobe': {'enum': ['RUL', 'RML', 'RLL', 'LUL', 'LLL', 'unknown']}, 'nodule_type': {'enum': ['solid', 'part_solid', 'ground_glass', 'unknown']}, 'long_axis': {'type': ['object', 'null']}, 'short_axis': {'type': ['object', 'null']}, 'missing_reason': {'type': ['string', 'null']}}, 'required': ['revision_id', 'finding_id', 'previous_revision_id', 'operator', 'at', 'action', 'state', 'reason', 'center_lps', 'slice_key', 'side', 'lobe', 'nodule_type', 'long_axis', 'short_axis', 'missing_reason']}, 'run': {'type': 'object', 'additionalProperties': False, 'properties': {'run_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'state': {'enum': ['queued', 'running', 'succeeded', 'failed']}, 'complete': {'type': 'boolean'}, 'input_sha256': {'type': 'string'}, 'model': {'type': 'object'}, 'error_code': {'type': ['string', 'null']}, 'candidate_count': {'type': ['integer', 'null'], 'minimum': 0}}, 'required': ['run_id', 'series_key', 'state', 'complete', 'input_sha256', 'model', 'error_code', 'candidate_count']}, 'snapshot': {'type': 'object', 'additionalProperties': False, 'properties': {'snapshot_id': {'type': 'string'}, 'project_id': {'type': 'string'}, 'study_key': {'type': 'string'}, 'series_key': {'type': 'string'}, 'draft_id': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'analysis_mode': {'enum': ['manual', 'ai']}, 'completed_at': {'type': 'string', 'format': 'date-time'}, 'operator': {'type': 'string'}, 'findings': {'type': 'array'}, 'revisions': {'type': 'array'}, 'counts': {'type': 'object'}, 'sha256': {'type': 'string'}}, 'required': ['snapshot_id', 'project_id', 'study_key', 'series_key', 'draft_id', 'run_id', 'analysis_mode', 'completed_at', 'operator', 'findings', 'revisions', 'counts', 'sha256']}}, '$ref': '#/$defs/study'}
+
+======================================================================
+ERROR: test_persisted_domain_entities_match_versioned_schema (test_contract.ContractTests.test_persisted_domain_entities_match_versioned_schema) (entity='series')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\.venv\Lib\site-packages\referencing\_core.py", line 276, in pointer
+    contents = contents[segment]  # type: ignore[reportUnknownArgumentType]
+               ~~~~~~~~^^^^^^^^^
+KeyError: 'series'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 462, in _validate_reference
+    resolved = self._resolver.lookup(ref)
+  File "D:\STN02\DMT\.venv\Lib\site-packages\referencing\_core.py", line 690, in lookup
+    return retrieved.value.pointer(pointer=fragment, resolver=resolver)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\referencing\_core.py", line 279, in pointer
+    raise error from lookup_error
+referencing.exceptions.PointerToNowhere: '/$defs/series' does not exist within {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'urn:dmt:lungct:v1', 'title': '�ν�� P0 ������Լ', '$defs': {'project': {'type': 'object', 'additionalProperties': False, 'properties': {'project_id': {'type': 'string'}, 'name': {'type': 'string'}, 'operator': {'type': 'string'}, 'created_at': {'type': 'string', 'format': 'date-time'}}, 'required': ['project_id', 'name', 'operator', 'created_at']}, 'source': {'type': 'object', 'additionalProperties': False, 'properties': {'source_code': {'type': 'string'}, 'authorized': {'const': True}, 'deidentified': {'const': True}, 'pixels_checked': {'const': True}, 'adult_chest': {'const': True}, 'noncontrast': {'const': True}, 'research_source': {'enum': ['screening', 'non_screening', 'unknown']}}, 'required': ['source_code', 'authorized', 'deidentified', 'pixels_checked', 'adult_chest', 'noncontrast', 'research_source']}, 'finding': {'type': 'object', 'additionalProperties': False, 'properties': {'finding_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'source': {'enum': ['ai', 'manual']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'box_lps': {'type': ['array', 'null'], 'items': {'type': 'number'}, 'minItems': 6, 'maxItems': 6}, 'score': {'type': ['number', 'null'], 'minimum': 0, 'maximum': 1}}, 'required': ['finding_id', 'series_key', 'run_id', 'source', 'center_lps', 'slice_key', 'box_lps', 'score']}, 'revision': {'type': 'object', 'additionalProperties': False, 'properties': {'revision_id': {'type': 'string'}, 'finding_id': {'type': 'string'}, 'previous_revision_id': {'type': ['string', 'null']}, 'operator': {'type': 'string'}, 'at': {'type': 'string', 'format': 'date-time'}, 'action': {'type': 'string'}, 'state': {'enum': ['pending', 'confirmed', 'excluded', 'uncertain']}, 'reason': {'type': ['string', 'null']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'side': {'enum': ['left', 'right', 'unknown']}, 'lobe': {'enum': ['RUL', 'RML', 'RLL', 'LUL', 'LLL', 'unknown']}, 'nodule_type': {'enum': ['solid', 'part_solid', 'ground_glass', 'unknown']}, 'long_axis': {'type': ['object', 'null']}, 'short_axis': {'type': ['object', 'null']}, 'missing_reason': {'type': ['string', 'null']}}, 'required': ['revision_id', 'finding_id', 'previous_revision_id', 'operator', 'at', 'action', 'state', 'reason', 'center_lps', 'slice_key', 'side', 'lobe', 'nodule_type', 'long_axis', 'short_axis', 'missing_reason']}, 'run': {'type': 'object', 'additionalProperties': False, 'properties': {'run_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'state': {'enum': ['queued', 'running', 'succeeded', 'failed']}, 'complete': {'type': 'boolean'}, 'input_sha256': {'type': 'string'}, 'model': {'type': 'object'}, 'error_code': {'type': ['string', 'null']}, 'candidate_count': {'type': ['integer', 'null'], 'minimum': 0}}, 'required': ['run_id', 'series_key', 'state', 'complete', 'input_sha256', 'model', 'error_code', 'candidate_count']}, 'snapshot': {'type': 'object', 'additionalProperties': False, 'properties': {'snapshot_id': {'type': 'string'}, 'project_id': {'type': 'string'}, 'study_key': {'type': 'string'}, 'series_key': {'type': 'string'}, 'draft_id': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'analysis_mode': {'enum': ['manual', 'ai']}, 'completed_at': {'type': 'string', 'format': 'date-time'}, 'operator': {'type': 'string'}, 'findings': {'type': 'array'}, 'revisions': {'type': 'array'}, 'counts': {'type': 'object'}, 'sha256': {'type': 'string'}}, 'required': ['snapshot_id', 'project_id', 'study_key', 'series_key', 'draft_id', 'run_id', 'analysis_mode', 'completed_at', 'operator', 'findings', 'revisions', 'counts', 'sha256']}}, '$ref': '#/$defs/series'}
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_contract.py", line 25, in test_persisted_domain_entities_match_versioned_schema
+    with self.subTest(entity=entity):validator.validate(item)
+                                     ~~~~~~~~~~~~~~~~~~^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 449, in validate
+    for error in self.iter_errors(*args, **kwargs):
+                 ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 383, in iter_errors
+    for error in errors:
+                 ^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\_keywords.py", line 275, in ref
+    yield from validator._validate_reference(ref=ref, instance=instance)
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 464, in _validate_reference
+    raise exceptions._WrappedReferencingError(err) from err
+jsonschema.exceptions._WrappedReferencingError: PointerToNowhere: '/$defs/series' does not exist within {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'urn:dmt:lungct:v1', 'title': '�ν�� P0 ������Լ', '$defs': {'project': {'type': 'object', 'additionalProperties': False, 'properties': {'project_id': {'type': 'string'}, 'name': {'type': 'string'}, 'operator': {'type': 'string'}, 'created_at': {'type': 'string', 'format': 'date-time'}}, 'required': ['project_id', 'name', 'operator', 'created_at']}, 'source': {'type': 'object', 'additionalProperties': False, 'properties': {'source_code': {'type': 'string'}, 'authorized': {'const': True}, 'deidentified': {'const': True}, 'pixels_checked': {'const': True}, 'adult_chest': {'const': True}, 'noncontrast': {'const': True}, 'research_source': {'enum': ['screening', 'non_screening', 'unknown']}}, 'required': ['source_code', 'authorized', 'deidentified', 'pixels_checked', 'adult_chest', 'noncontrast', 'research_source']}, 'finding': {'type': 'object', 'additionalProperties': False, 'properties': {'finding_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'source': {'enum': ['ai', 'manual']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'box_lps': {'type': ['array', 'null'], 'items': {'type': 'number'}, 'minItems': 6, 'maxItems': 6}, 'score': {'type': ['number', 'null'], 'minimum': 0, 'maximum': 1}}, 'required': ['finding_id', 'series_key', 'run_id', 'source', 'center_lps', 'slice_key', 'box_lps', 'score']}, 'revision': {'type': 'object', 'additionalProperties': False, 'properties': {'revision_id': {'type': 'string'}, 'finding_id': {'type': 'string'}, 'previous_revision_id': {'type': ['string', 'null']}, 'operator': {'type': 'string'}, 'at': {'type': 'string', 'format': 'date-time'}, 'action': {'type': 'string'}, 'state': {'enum': ['pending', 'confirmed', 'excluded', 'uncertain']}, 'reason': {'type': ['string', 'null']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'side': {'enum': ['left', 'right', 'unknown']}, 'lobe': {'enum': ['RUL', 'RML', 'RLL', 'LUL', 'LLL', 'unknown']}, 'nodule_type': {'enum': ['solid', 'part_solid', 'ground_glass', 'unknown']}, 'long_axis': {'type': ['object', 'null']}, 'short_axis': {'type': ['object', 'null']}, 'missing_reason': {'type': ['string', 'null']}}, 'required': ['revision_id', 'finding_id', 'previous_revision_id', 'operator', 'at', 'action', 'state', 'reason', 'center_lps', 'slice_key', 'side', 'lobe', 'nodule_type', 'long_axis', 'short_axis', 'missing_reason']}, 'run': {'type': 'object', 'additionalProperties': False, 'properties': {'run_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'state': {'enum': ['queued', 'running', 'succeeded', 'failed']}, 'complete': {'type': 'boolean'}, 'input_sha256': {'type': 'string'}, 'model': {'type': 'object'}, 'error_code': {'type': ['string', 'null']}, 'candidate_count': {'type': ['integer', 'null'], 'minimum': 0}}, 'required': ['run_id', 'series_key', 'state', 'complete', 'input_sha256', 'model', 'error_code', 'candidate_count']}, 'snapshot': {'type': 'object', 'additionalProperties': False, 'properties': {'snapshot_id': {'type': 'string'}, 'project_id': {'type': 'string'}, 'study_key': {'type': 'string'}, 'series_key': {'type': 'string'}, 'draft_id': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'analysis_mode': {'enum': ['manual', 'ai']}, 'completed_at': {'type': 'string', 'format': 'date-time'}, 'operator': {'type': 'string'}, 'findings': {'type': 'array'}, 'revisions': {'type': 'array'}, 'counts': {'type': 'object'}, 'sha256': {'type': 'string'}}, 'required': ['snapshot_id', 'project_id', 'study_key', 'series_key', 'draft_id', 'run_id', 'analysis_mode', 'completed_at', 'operator', 'findings', 'revisions', 'counts', 'sha256']}}, '$ref': '#/$defs/series'}
+
+======================================================================
+ERROR: test_persisted_domain_entities_match_versioned_schema (test_contract.ContractTests.test_persisted_domain_entities_match_versioned_schema) (entity='draft')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\.venv\Lib\site-packages\referencing\_core.py", line 276, in pointer
+    contents = contents[segment]  # type: ignore[reportUnknownArgumentType]
+               ~~~~~~~~^^^^^^^^^
+KeyError: 'draft'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 462, in _validate_reference
+    resolved = self._resolver.lookup(ref)
+  File "D:\STN02\DMT\.venv\Lib\site-packages\referencing\_core.py", line 690, in lookup
+    return retrieved.value.pointer(pointer=fragment, resolver=resolver)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\referencing\_core.py", line 279, in pointer
+    raise error from lookup_error
+referencing.exceptions.PointerToNowhere: '/$defs/draft' does not exist within {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'urn:dmt:lungct:v1', 'title': '�ν�� P0 ������Լ', '$defs': {'project': {'type': 'object', 'additionalProperties': False, 'properties': {'project_id': {'type': 'string'}, 'name': {'type': 'string'}, 'operator': {'type': 'string'}, 'created_at': {'type': 'string', 'format': 'date-time'}}, 'required': ['project_id', 'name', 'operator', 'created_at']}, 'source': {'type': 'object', 'additionalProperties': False, 'properties': {'source_code': {'type': 'string'}, 'authorized': {'const': True}, 'deidentified': {'const': True}, 'pixels_checked': {'const': True}, 'adult_chest': {'const': True}, 'noncontrast': {'const': True}, 'research_source': {'enum': ['screening', 'non_screening', 'unknown']}}, 'required': ['source_code', 'authorized', 'deidentified', 'pixels_checked', 'adult_chest', 'noncontrast', 'research_source']}, 'finding': {'type': 'object', 'additionalProperties': False, 'properties': {'finding_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'source': {'enum': ['ai', 'manual']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'box_lps': {'type': ['array', 'null'], 'items': {'type': 'number'}, 'minItems': 6, 'maxItems': 6}, 'score': {'type': ['number', 'null'], 'minimum': 0, 'maximum': 1}}, 'required': ['finding_id', 'series_key', 'run_id', 'source', 'center_lps', 'slice_key', 'box_lps', 'score']}, 'revision': {'type': 'object', 'additionalProperties': False, 'properties': {'revision_id': {'type': 'string'}, 'finding_id': {'type': 'string'}, 'previous_revision_id': {'type': ['string', 'null']}, 'operator': {'type': 'string'}, 'at': {'type': 'string', 'format': 'date-time'}, 'action': {'type': 'string'}, 'state': {'enum': ['pending', 'confirmed', 'excluded', 'uncertain']}, 'reason': {'type': ['string', 'null']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'side': {'enum': ['left', 'right', 'unknown']}, 'lobe': {'enum': ['RUL', 'RML', 'RLL', 'LUL', 'LLL', 'unknown']}, 'nodule_type': {'enum': ['solid', 'part_solid', 'ground_glass', 'unknown']}, 'long_axis': {'type': ['object', 'null']}, 'short_axis': {'type': ['object', 'null']}, 'missing_reason': {'type': ['string', 'null']}}, 'required': ['revision_id', 'finding_id', 'previous_revision_id', 'operator', 'at', 'action', 'state', 'reason', 'center_lps', 'slice_key', 'side', 'lobe', 'nodule_type', 'long_axis', 'short_axis', 'missing_reason']}, 'run': {'type': 'object', 'additionalProperties': False, 'properties': {'run_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'state': {'enum': ['queued', 'running', 'succeeded', 'failed']}, 'complete': {'type': 'boolean'}, 'input_sha256': {'type': 'string'}, 'model': {'type': 'object'}, 'error_code': {'type': ['string', 'null']}, 'candidate_count': {'type': ['integer', 'null'], 'minimum': 0}}, 'required': ['run_id', 'series_key', 'state', 'complete', 'input_sha256', 'model', 'error_code', 'candidate_count']}, 'snapshot': {'type': 'object', 'additionalProperties': False, 'properties': {'snapshot_id': {'type': 'string'}, 'project_id': {'type': 'string'}, 'study_key': {'type': 'string'}, 'series_key': {'type': 'string'}, 'draft_id': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'analysis_mode': {'enum': ['manual', 'ai']}, 'completed_at': {'type': 'string', 'format': 'date-time'}, 'operator': {'type': 'string'}, 'findings': {'type': 'array'}, 'revisions': {'type': 'array'}, 'counts': {'type': 'object'}, 'sha256': {'type': 'string'}}, 'required': ['snapshot_id', 'project_id', 'study_key', 'series_key', 'draft_id', 'run_id', 'analysis_mode', 'completed_at', 'operator', 'findings', 'revisions', 'counts', 'sha256']}}, '$ref': '#/$defs/draft'}
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_contract.py", line 25, in test_persisted_domain_entities_match_versioned_schema
+    with self.subTest(entity=entity):validator.validate(item)
+                                     ~~~~~~~~~~~~~~~~~~^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 449, in validate
+    for error in self.iter_errors(*args, **kwargs):
+                 ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 383, in iter_errors
+    for error in errors:
+                 ^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\_keywords.py", line 275, in ref
+    yield from validator._validate_reference(ref=ref, instance=instance)
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 464, in _validate_reference
+    raise exceptions._WrappedReferencingError(err) from err
+jsonschema.exceptions._WrappedReferencingError: PointerToNowhere: '/$defs/draft' does not exist within {'$schema': 'https://json-schema.org/draft/2020-12/schema', '$id': 'urn:dmt:lungct:v1', 'title': '�ν�� P0 ������Լ', '$defs': {'project': {'type': 'object', 'additionalProperties': False, 'properties': {'project_id': {'type': 'string'}, 'name': {'type': 'string'}, 'operator': {'type': 'string'}, 'created_at': {'type': 'string', 'format': 'date-time'}}, 'required': ['project_id', 'name', 'operator', 'created_at']}, 'source': {'type': 'object', 'additionalProperties': False, 'properties': {'source_code': {'type': 'string'}, 'authorized': {'const': True}, 'deidentified': {'const': True}, 'pixels_checked': {'const': True}, 'adult_chest': {'const': True}, 'noncontrast': {'const': True}, 'research_source': {'enum': ['screening', 'non_screening', 'unknown']}}, 'required': ['source_code', 'authorized', 'deidentified', 'pixels_checked', 'adult_chest', 'noncontrast', 'research_source']}, 'finding': {'type': 'object', 'additionalProperties': False, 'properties': {'finding_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'source': {'enum': ['ai', 'manual']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'box_lps': {'type': ['array', 'null'], 'items': {'type': 'number'}, 'minItems': 6, 'maxItems': 6}, 'score': {'type': ['number', 'null'], 'minimum': 0, 'maximum': 1}}, 'required': ['finding_id', 'series_key', 'run_id', 'source', 'center_lps', 'slice_key', 'box_lps', 'score']}, 'revision': {'type': 'object', 'additionalProperties': False, 'properties': {'revision_id': {'type': 'string'}, 'finding_id': {'type': 'string'}, 'previous_revision_id': {'type': ['string', 'null']}, 'operator': {'type': 'string'}, 'at': {'type': 'string', 'format': 'date-time'}, 'action': {'type': 'string'}, 'state': {'enum': ['pending', 'confirmed', 'excluded', 'uncertain']}, 'reason': {'type': ['string', 'null']}, 'center_lps': {'type': 'array', 'items': {'type': 'number'}, 'minItems': 3, 'maxItems': 3}, 'slice_key': {'type': 'string'}, 'side': {'enum': ['left', 'right', 'unknown']}, 'lobe': {'enum': ['RUL', 'RML', 'RLL', 'LUL', 'LLL', 'unknown']}, 'nodule_type': {'enum': ['solid', 'part_solid', 'ground_glass', 'unknown']}, 'long_axis': {'type': ['object', 'null']}, 'short_axis': {'type': ['object', 'null']}, 'missing_reason': {'type': ['string', 'null']}}, 'required': ['revision_id', 'finding_id', 'previous_revision_id', 'operator', 'at', 'action', 'state', 'reason', 'center_lps', 'slice_key', 'side', 'lobe', 'nodule_type', 'long_axis', 'short_axis', 'missing_reason']}, 'run': {'type': 'object', 'additionalProperties': False, 'properties': {'run_id': {'type': 'string'}, 'series_key': {'type': 'string'}, 'state': {'enum': ['queued', 'running', 'succeeded', 'failed']}, 'complete': {'type': 'boolean'}, 'input_sha256': {'type': 'string'}, 'model': {'type': 'object'}, 'error_code': {'type': ['string', 'null']}, 'candidate_count': {'type': ['integer', 'null'], 'minimum': 0}}, 'required': ['run_id', 'series_key', 'state', 'complete', 'input_sha256', 'model', 'error_code', 'candidate_count']}, 'snapshot': {'type': 'object', 'additionalProperties': False, 'properties': {'snapshot_id': {'type': 'string'}, 'project_id': {'type': 'string'}, 'study_key': {'type': 'string'}, 'series_key': {'type': 'string'}, 'draft_id': {'type': 'string'}, 'run_id': {'type': ['string', 'null']}, 'analysis_mode': {'enum': ['manual', 'ai']}, 'completed_at': {'type': 'string', 'format': 'date-time'}, 'operator': {'type': 'string'}, 'findings': {'type': 'array'}, 'revisions': {'type': 'array'}, 'counts': {'type': 'object'}, 'sha256': {'type': 'string'}}, 'required': ['snapshot_id', 'project_id', 'study_key', 'series_key', 'draft_id', 'run_id', 'analysis_mode', 'completed_at', 'operator', 'findings', 'revisions', 'counts', 'sha256']}}, '$ref': '#/$defs/draft'}
+
+======================================================================
+ERROR: test_persisted_domain_entities_match_versioned_schema (test_contract.ContractTests.test_persisted_domain_entities_match_versioned_schema) (entity='finding')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_contract.py", line 25, in test_persisted_domain_entities_match_versioned_schema
+    with self.subTest(entity=entity):validator.validate(item)
+                                     ~~~~~~~~~~~~~~~~~~^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 450, in validate
+    raise error
+jsonschema.exceptions.ValidationError: Additional properties are not allowed ('label', 'project_id' were unexpected)
+
+Failed validating 'additionalProperties' in schema:
+    {'type': 'object',
+     'additionalProperties': False,
+     'properties': {'finding_id': {'type': 'string'},
+                    'series_key': {'type': 'string'},
+                    'run_id': {'type': ['string', 'null']},
+                    'source': {'enum': ['ai', 'manual']},
+                    'center_lps': {'type': 'array',
+                                   'items': {'type': 'number'},
+                                   'minItems': 3,
+                                   'maxItems': 3},
+                    'slice_key': {'type': 'string'},
+                    'box_lps': {'type': ['array', 'null'],
+                                'items': {'type': 'number'},
+                                'minItems': 6,
+                                'maxItems': 6},
+                    'score': {'type': ['number', 'null'],
+                              'minimum': 0,
+                              'maximum': 1}},
+     'required': ['finding_id',
+                  'series_key',
+                  'run_id',
+                  'source',
+                  'center_lps',
+                  'slice_key',
+                  'box_lps',
+                  'score']}
+
+On instance:
+    {'box_lps': None,
+     'center_lps': [-6, -3, 6],
+     'finding_id': 'finding_8265496e7b1545c6beb3afc02e37c3b6',
+     'label': 'N-001',
+     'project_id': 'project_de4d2a2c0dc845e4a6c7816551424364',
+     'run_id': None,
+     'score': None,
+     'series_key': 'series_604c26c24f4c0191df18163c',
+     'slice_key': 'slice_02dcd893c63f0fff5b00dd9c',
+     'source': 'manual'}
+
+======================================================================
+ERROR: test_persisted_domain_entities_match_versioned_schema (test_contract.ContractTests.test_persisted_domain_entities_match_versioned_schema) (entity='snapshot')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_contract.py", line 25, in test_persisted_domain_entities_match_versioned_schema
+    with self.subTest(entity=entity):validator.validate(item)
+                                     ~~~~~~~~~~~~~~~~~~^^^^^^
+  File "D:\STN02\DMT\.venv\Lib\site-packages\jsonschema\validators.py", line 450, in validate
+    raise error
+jsonschema.exceptions.ValidationError: Additional properties are not allowed ('heads', 'research_source', 'run', 'run_history', 'synthetic' were unexpected)
+
+Failed validating 'additionalProperties' in schema:
+    {'type': 'object',
+     'additionalProperties': False,
+     'properties': {'snapshot_id': {'type': 'string'},
+                    'project_id': {'type': 'string'},
+                    'study_key': {'type': 'string'},
+                    'series_key': {'type': 'string'},
+                    'draft_id': {'type': 'string'},
+                    'run_id': {'type': ['string', 'null']},
+                    'analysis_mode': {'enum': ['manual', 'ai']},
+                    'completed_at': {'type': 'string',
+                                     'format': 'date-time'},
+                    'operator': {'type': 'string'},
+                    'findings': {'type': 'array'},
+                    'revisions': {'type': 'array'},
+                    'counts': {'type': 'object'},
+                    'sha256': {'type': 'string'}},
+     'required': ['snapshot_id',
+                  'project_id',
+                  'study_key',
+                  'series_key',
+                  'draft_id',
+                  'run_id',
+                  'analysis_mode',
+                  'completed_at',
+                  'operator',
+                  'findings',
+                  'revisions',
+                  'counts',
+                  'sha256']}
+
+On instance:
+    {'analysis_mode': 'manual',
+     'completed_at': '2026-11-03T06:16:48.404799+00:00',
+     'counts': {'ai': 0,
+                'confirmed': 1,
+                'excluded': 0,
+                'manual': 1,
+                'pending': 0,
+                'uncertain': 0},
+     'draft_id': 'draft_c7377dcf638742bf99226fa71e183023',
+     'findings': [{'finding_id': 'finding_8265496e7b1545c6beb3afc02e37c3b6',
+                   'label': 'N-001',
+                   'original': {'box_lps': None,
+                                'center_lps': [-6, -3, 6],
+                                'finding_id': 'finding_8265496e7b1545c6beb3afc02e37c3b6',
+                                'label': 'N-001',
+                                'project_id': 'project_de4d2a2c0dc845e4a6c7816551424364',
+                                'run_id': None,
+                                'score': None,
+                                'series_key': 'series_604c26c24f4c0191df18163c',
+                                'slice_key': 'slice_02dcd893c63f0fff5b00dd9c',
+                                'source': 'manual'},
+                   'revision': {'action': 'revise',
+                                'at': '2026-11-03T06:16:48.397785+00:00',
+                                'center_lps': [-6.0, -3.0, 6.0],
+                                'finding_id': 'finding_8265496e7b1545c6beb3afc02e37c3b6',
+                                'lobe': 'unknown',
+                                'long_axis': None,
+                                'missing_reason': 'not_measured',
+                                'nodule_type': 'unknown',
+                                'operator': 'OP',
+                                'previous_revision_id': 'revision_389d44fe872948689e57eb63ceee6de8',
+                                'reason': None,
+                                'revision_id': 'revision_f6ad2c1c44f34b5cb5c1efa23fc9e979',
+                                'short_axis': None,
+                                'side': 'unknown',
+                                'slice_key': 'slice_02dcd893c63f0fff5b00dd9c',
+                                'state': 'confirmed'}}],
+     'heads': {'finding_8265496e7b1545c6beb3afc02e37c3b6': 'revision_f6ad2c1c44f34b5cb5c1efa23fc9e979'},
+     'operator': 'OP',
+     'project_id': 'project_de4d2a2c0dc845e4a6c7816551424364',
+     'research_source': 'unknown',
+     'revisions': [{'action': 'revise',
+                    'at': '2026-11-03T06:16:48.397785+00:00',
+                    'center_lps': [-6.0, -3.0, 6.0],
+                    'finding_id': 'finding_8265496e7b1545c6beb3afc02e37c3b6',
+                    'lobe': 'unknown',
+                    'long_axis': None,
+                    'missing_reason': 'not_measured',
+                    'nodule_type': 'unknown',
+                    'operator': 'OP',
+                    'previous_revision_id': 'revision_389d44fe872948689e57eb63ceee6de8',
+                    'reason': None,
+                    'revision_id': 'revision_f6ad2c1c44f34b5cb5c1efa23fc9e979',
+                    'short_axis': None,
+                    'side': 'unknown',
+                    'slice_key': 'slice_02dcd893c63f0fff5b00dd9c',
+                    'state': 'confirmed'},
+                   {'action': 'add',
+                    'at': '2026-11-03T06:16:48.392819+00:00',
+                    'center_lps': [-6.0, -3.0, 6.0],
+                    'finding_id': 'finding_8265496e7b1545c6beb3afc02e37c3b6',
+                    'lobe': 'unknown',
+                    'long_axis': None,
+                    'missing_reason': None,
+                    'nodule_type': 'unknown',
+                    'operator': 'OP',
+                    'previous_revision_id': None,
+                    'reason': None,
+                    'revision_id': 'revision_389d44fe872948689e57eb63ceee6de8',
+                    'short_axis': None,
+                    'side': 'unknown',
+                    'slice_key': 'slice_02dcd893c63f0fff5b00dd9c',
+                    'state': 'pending'}],
+     'run': None,
+     'run_history': [],
+     'run_id': None,
+     'series_key': 'series_604c26c24f4c0191df18163c',
+     'sha256': '58553de54e346502919af0eb959232b2a0f9df69f69d2482ea98956871806963',
+     'snapshot_id': 'snapshot_5a0ad260dbd443ed8748e09f59b0d9ab',
+     'study_key': 'study_caea0758627c3e5c7a622d07',
+     'synthetic': True}
+
+======================================================================
+ERROR: test_A08_counts_zero_denominator_hashes_bom_and_lookup (test_export.ExportTests.test_A08_counts_zero_denominator_hashes_bom_and_lookup)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_export.py", line 38, in test_A08_counts_zero_denominator_hashes_bom_and_lookup
+    self.assertEqual(Path(package['output_directory']),folder)
+                          ~~~~~~~^^^^^^^^^^^^^^^^^^^^
+KeyError: 'output_directory'
+
+======================================================================
+FAIL: test_restart_marks_interrupted_task_failed_not_zero (test_model.ModelTests.test_restart_marks_interrupted_task_failed_not_zero)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_model.py", line 75, in test_restart_marks_interrupted_task_failed_not_zero
+    self.assertEqual(result['error_code'],'INTERRUPTED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: None != 'INTERRUPTED'
+
+----------------------------------------------------------------------
+Ran 25 tests in 4.270s
+
+FAILED (failures=1, errors=13)

@@ -9,6 +9,17 @@ from helpers import SOURCE,make_ct
 
 
 class ExportTests(unittest.TestCase):
+    def test_model_profile_and_runtime_export_without_private_fields(self):
+        from apps.lungct.export import run_export
+        result=run_export(dict(run_id='run_test',model=dict(name='MONAI',execution_profile='low-memory',
+            software_version='0.1.0',adapter_sha256='sha',private_path='SECRET_PATH',
+            preprocessing=dict(patch=[256,256,96],private_path='SECRET_PATH'),
+            runtime=dict(torch='2.4.1+cu121',device='GPU',cuda_peak_allocated_bytes=123,patient_name='SECRET_NAME'))))
+        self.assertEqual(result['model']['execution_profile'],'low-memory')
+        self.assertEqual(result['model']['preprocessing']['patch'],[256,256,96])
+        self.assertEqual(result['model']['runtime']['torch'],'2.4.1+cu121')
+        self.assertNotIn('SECRET',json.dumps(result))
+
     def setUp(self):
         from apps.lungct.service import Service
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
@@ -35,6 +46,7 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(len(preview['snapshot_ids']),2);self.assertEqual(len(preview['skipped']),1)
         package=self.service.export_snapshots(self.project,preview['snapshot_ids'])
         folder=self.service.root/'exports'/package['export_id']
+        self.assertEqual(Path(package['output_directory']),folder)
         self.assertTrue((folder/'studies.csv').read_bytes().startswith(b'\xef\xbb\xbf'))
         with (folder/'studies.csv').open(encoding='utf-8-sig',newline='') as f:studies=list(csv.DictReader(f))
         with (folder/'nodules.csv').open(encoding='utf-8-sig',newline='') as f:nodules=list(csv.DictReader(f))

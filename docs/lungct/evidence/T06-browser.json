@@ -1,0 +1,35 @@
+{
+  "status": "PASS",
+  "data": "SYNTHETIC ONLY; NOT A04",
+  "url": "http://127.0.0.1:8766/",
+  "viewports": [
+    [
+      1440,
+      900
+    ],
+    [
+      1280,
+      800
+    ]
+  ],
+  "egress": "non-loopback blocked",
+  "unexpected_errors": [],
+  "expected_negative_test": [
+    {
+      "url": "http://127.0.0.1:8766/api/action",
+      "status": 400,
+      "body": "{\"error\":\"\\u4ecd\\u6709\\u5f85\\u590d\\u6838\\u89c2\\u5bdf\\uff0c\\u4e0d\\u80fd\\u5b8c\\u6210\"}\n"
+    }
+  ],
+  "external": [],
+  "steps": [
+    "创建项目、导入薄层+定位像、确认有效序列、建立人工草稿",
+    "原片绘制10.0/6.0 mm径线、人工侧别和确认保存",
+    "慢速切片加载期间禁止在旧画面落点",
+    "翻层/返回、缩放测量不变、待复核阻断、确认2/排除1/存疑1、键盘输入焦点保护、两尺寸截图",
+    "无模型提示与人工路径共存",
+    "完成快照、导出1检查2结节、按N-001回查原片及测量",
+    "浏览器重开恢复项目及已完成复核记录"
+  ],
+  "exported": "导出成功 · export_32e31810f6a34aea8201ac80222a1a7b"
+}

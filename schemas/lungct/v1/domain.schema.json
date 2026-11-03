@@ -19,13 +19,20 @@
         "created_at": {
           "type": "string",
           "format": "date-time"
+        },
+        "selected_series": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
         "project_id",
         "name",
         "operator",
-        "created_at"
+        "created_at",
+        "selected_series"
       ]
     },
     "source": {
@@ -119,6 +126,12 @@
           ],
           "minimum": 0,
           "maximum": 1
+        },
+        "project_id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
         }
       },
       "required": [
@@ -129,7 +142,9 @@
         "center_lps",
         "slice_key",
         "box_lps",
-        "score"
+        "score",
+        "project_id",
+        "label"
       ]
     },
     "revision": {
@@ -209,15 +224,23 @@
           ]
         },
         "long_axis": {
-          "type": [
-            "object",
-            "null"
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/axis"
+            }
           ]
         },
         "short_axis": {
-          "type": [
-            "object",
-            "null"
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/axis"
+            }
           ]
         },
         "missing_reason": {
@@ -271,7 +294,10 @@
           "type": "string"
         },
         "model": {
-          "type": "object"
+          "type": [
+            "object",
+            "null"
+          ]
         },
         "error_code": {
           "type": [
@@ -285,6 +311,56 @@
             "null"
           ],
           "minimum": 0
+        },
+        "project_id": {
+          "type": "string"
+        },
+        "request_key": {
+          "type": "string"
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "finding_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "initial_revisions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "elapsed_seconds": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "message": {
+          "type": "string"
+        },
+        "model_to_lps": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {
+              "type": "number"
+            }
+          }
         }
       },
       "required": [
@@ -295,7 +371,15 @@
         "input_sha256",
         "model",
         "error_code",
-        "candidate_count"
+        "candidate_count",
+        "project_id",
+        "request_key",
+        "threshold",
+        "created_at",
+        "finding_ids",
+        "initial_revisions",
+        "elapsed_seconds",
+        "message"
       ]
     },
     "snapshot": {
@@ -337,16 +421,54 @@
           "type": "string"
         },
         "findings": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/observation"
+          }
         },
         "revisions": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/revision"
+          }
         },
         "counts": {
-          "type": "object"
+          "$ref": "#/$defs/counts"
         },
         "sha256": {
           "type": "string"
+        },
+        "run": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/run"
+            }
+          ]
+        },
+        "heads": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "research_source": {
+          "enum": [
+            "screening",
+            "non_screening",
+            "unknown"
+          ]
+        },
+        "synthetic": {
+          "type": "boolean"
+        },
+        "run_history": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/run"
+          }
         }
       },
       "required": [
@@ -362,7 +484,370 @@
         "findings",
         "revisions",
         "counts",
-        "sha256"
+        "sha256",
+        "run",
+        "heads",
+        "research_source",
+        "synthetic",
+        "run_history"
+      ]
+    },
+    "study": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "project_id": {
+          "type": "string"
+        },
+        "study_key": {
+          "type": "string"
+        },
+        "subject_key": {
+          "type": "string"
+        },
+        "case_code": {
+          "type": "string"
+        },
+        "selected_series": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "enum": [
+            "draft",
+            "reviewing",
+            "completed"
+          ]
+        }
+      },
+      "required": [
+        "project_id",
+        "study_key",
+        "subject_key",
+        "case_code",
+        "selected_series",
+        "status"
+      ]
+    },
+    "geometry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "origins": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          }
+        },
+        "row": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "column": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "normal": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "spacing": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "columns": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "locations": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "origins",
+        "row",
+        "column",
+        "normal",
+        "spacing",
+        "rows",
+        "columns",
+        "locations"
+      ]
+    },
+    "series": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "project_id": {
+          "type": "string"
+        },
+        "study_key": {
+          "type": "string"
+        },
+        "series_key": {
+          "type": "string"
+        },
+        "subject_key": {
+          "type": "string"
+        },
+        "slice_keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "eligible": {
+          "type": "boolean"
+        },
+        "qc_codes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "qc_metrics": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "geometry": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/geometry"
+            }
+          ]
+        },
+        "thickness_mm": {
+          "type": "number"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "input_sha256": {
+          "type": "string"
+        },
+        "synthetic": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "project_id",
+        "study_key",
+        "series_key",
+        "subject_key",
+        "slice_keys",
+        "eligible",
+        "qc_codes",
+        "qc_metrics",
+        "geometry",
+        "thickness_mm",
+        "source",
+        "input_sha256",
+        "synthetic"
+      ]
+    },
+    "axis": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "length_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "slice_key": {
+          "type": "string"
+        },
+        "method": {
+          "const": "manual_axial_lps"
+        }
+      },
+      "required": [
+        "endpoints",
+        "length_mm",
+        "slice_key",
+        "method"
+      ]
+    },
+    "draft": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "draft_id": {
+          "type": "string"
+        },
+        "project_id": {
+          "type": "string"
+        },
+        "study_key": {
+          "type": "string"
+        },
+        "series_key": {
+          "type": "string"
+        },
+        "run_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "analysis_mode": {
+          "enum": [
+            "manual",
+            "ai"
+          ]
+        },
+        "operator": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "reviewing",
+            "completed"
+          ]
+        },
+        "heads": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "snapshot_id": {
+          "type": "string"
+        },
+        "reopened_from": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "draft_id",
+        "project_id",
+        "study_key",
+        "series_key",
+        "run_id",
+        "analysis_mode",
+        "operator",
+        "status",
+        "heads",
+        "version",
+        "created_at"
+      ]
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ai": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "manual": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "confirmed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "excluded": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "uncertain": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pending": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "ai",
+        "manual",
+        "confirmed",
+        "excluded",
+        "uncertain",
+        "pending"
+      ]
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "finding_id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "original": {
+          "$ref": "#/$defs/finding"
+        },
+        "revision": {
+          "$ref": "#/$defs/revision"
+        }
+      },
+      "required": [
+        "finding_id",
+        "label",
+        "original",
+        "revision"
       ]
     }
   }
