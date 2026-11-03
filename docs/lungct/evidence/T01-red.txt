@@ -1,0 +1,59 @@
+test_A01_geometry_order_dedup_and_project_isolation (test_import.ImportTests.test_A01_geometry_order_dedup_and_project_isolation) ... ERROR
+test_conflicting_uid_rejects_atomic_import (test_import.ImportTests.test_conflicting_uid_rejects_atomic_import) ... ERROR
+test_nonuniform_tilt_missing_geometry_and_contrast_are_blocked (test_import.ImportTests.test_nonuniform_tilt_missing_geometry_and_contrast_are_blocked) ... ERROR
+test_persistence_and_source_mapping (test_import.ImportTests.test_persistence_and_source_mapping) ... ERROR
+test_phi_name_and_burned_pixels_rejected (test_import.ImportTests.test_phi_name_and_burned_pixels_rejected) ... ERROR
+test_requires_authorization_and_allowed_directory (test_import.ImportTests.test_requires_authorization_and_allowed_directory) ... ERROR
+
+======================================================================
+ERROR: test_A01_geometry_order_dedup_and_project_isolation (test_import.ImportTests.test_A01_geometry_order_dedup_and_project_isolation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_import.py", line 11, in setUp
+    from apps.lungct.service import Service
+ModuleNotFoundError: No module named 'apps.lungct'
+
+======================================================================
+ERROR: test_conflicting_uid_rejects_atomic_import (test_import.ImportTests.test_conflicting_uid_rejects_atomic_import)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_import.py", line 11, in setUp
+    from apps.lungct.service import Service
+ModuleNotFoundError: No module named 'apps.lungct'
+
+======================================================================
+ERROR: test_nonuniform_tilt_missing_geometry_and_contrast_are_blocked (test_import.ImportTests.test_nonuniform_tilt_missing_geometry_and_contrast_are_blocked)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_import.py", line 11, in setUp
+    from apps.lungct.service import Service
+ModuleNotFoundError: No module named 'apps.lungct'
+
+======================================================================
+ERROR: test_persistence_and_source_mapping (test_import.ImportTests.test_persistence_and_source_mapping)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_import.py", line 11, in setUp
+    from apps.lungct.service import Service
+ModuleNotFoundError: No module named 'apps.lungct'
+
+======================================================================
+ERROR: test_phi_name_and_burned_pixels_rejected (test_import.ImportTests.test_phi_name_and_burned_pixels_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_import.py", line 11, in setUp
+    from apps.lungct.service import Service
+ModuleNotFoundError: No module named 'apps.lungct'
+
+======================================================================
+ERROR: test_requires_authorization_and_allowed_directory (test_import.ImportTests.test_requires_authorization_and_allowed_directory)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_import.py", line 11, in setUp
+    from apps.lungct.service import Service
+ModuleNotFoundError: No module named 'apps.lungct'
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.005s
+
+FAILED (errors=6)
