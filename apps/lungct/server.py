@@ -60,7 +60,8 @@ def create_app(service, *, enabled=False):
                  'startDraft':service.start_draft,'getDraft':service.get_draft,'addFinding':service.add_finding,
                  'reviseFinding':service.revise_finding,'undoFinding':service.undo_finding,
                  'completeCase':service.complete_case,'reopenCase':service.reopen_case,'findingHistory':service.finding_history,
-                 'startRun':service.start_run,'getRun':service.get_run}
+                 'startRun':service.start_run,'getRun':service.get_run,
+                 'exportPreview':service.export_preview,'exportSnapshots':service.export_snapshots,'lookupFinding':service.lookup_finding}
         if name not in actions: raise ValueError('未知操作')
         return jsonify(actions[name](**payload))
 

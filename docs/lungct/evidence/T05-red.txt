@@ -1,0 +1,40 @@
+test_A08_counts_zero_denominator_hashes_bom_and_lookup (test_export.ExportTests.test_A08_counts_zero_denominator_hashes_bom_and_lookup) ... ERROR
+test_snapshot_and_project_boundaries_and_unique_packages (test_export.ExportTests.test_snapshot_and_project_boundaries_and_unique_packages) ... ERROR
+test_write_failure_never_reports_partial_success (test_export.ExportTests.test_write_failure_never_reports_partial_success) ... ERROR
+
+======================================================================
+ERROR: test_A08_counts_zero_denominator_hashes_bom_and_lookup (test_export.ExportTests.test_A08_counts_zero_denominator_hashes_bom_and_lookup)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_export.py", line 34, in test_A08_counts_zero_denominator_hashes_bom_and_lookup
+    preview=self.service.export_preview(self.project)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Service' object has no attribute 'export_preview'
+
+======================================================================
+ERROR: test_snapshot_and_project_boundaries_and_unique_packages (test_export.ExportTests.test_snapshot_and_project_boundaries_and_unique_packages)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_export.py", line 57, in test_snapshot_and_project_boundaries_and_unique_packages
+    with self.assertRaises(ValueError):self.service.export_snapshots(other,[snap['snapshot_id']])
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Service' object has no attribute 'export_snapshots'
+
+======================================================================
+ERROR: test_write_failure_never_reports_partial_success (test_export.ExportTests.test_write_failure_never_reports_partial_success)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_export.py", line 66, in test_write_failure_never_reports_partial_success
+    with patch('apps.lungct.export.os.replace',side_effect=OSError('TEST DISK FULL')):
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\STN\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py", line 1487, in __enter__
+    self.target = self.getter()
+                  ~~~~~~~~~~~^^
+  File "C:\Users\STN\AppData\Local\Programs\Python\Python313\Lib\pkgutil.py", line 528, in resolve_name
+    result = getattr(result, p)
+AttributeError: module 'apps.lungct' has no attribute 'export'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.619s
+
+FAILED (errors=3)

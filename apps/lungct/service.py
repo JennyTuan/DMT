@@ -8,9 +8,10 @@ from .dicom_io import scan
 from .geometry import from_dict
 from .review import ReviewService
 from .model import ModelService
+from .export import ExportService
 
 
-class Service(ReviewService,ModelService):
+class Service(ReviewService,ModelService,ExportService):
     def __init__(self, root, *, allowed_roots=(), model=None):
         self.repo = Repository(root)
         self.root = self.repo.root
