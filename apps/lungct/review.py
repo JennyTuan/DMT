@@ -158,7 +158,8 @@ class ReviewService:
                 draft_id=draft,run_id=item['run_id'],analysis_mode=item['analysis_mode'],completed_at=now(),operator=code(operator),
                 findings=records,revisions=list(revisions.values()),counts=summary,run=run,
                 heads=deepcopy(item['heads']),research_source=state['series'][item['series_key']]['source']['research_source'],
-                synthetic=state['series'][item['series_key']]['synthetic'])
+                synthetic=state['series'][item['series_key']]['synthetic'],
+                run_history=[deepcopy(r) for r in state['runs'].values() if r['project_id']==project and r['series_key']==item['series_key']])
             snapshot['sha256']=digest(snapshot)
             state['snapshots'][sid]=snapshot;item['status']='completed';item['snapshot_id']=sid
             state['studies'][item['study_key']]['status']='completed'

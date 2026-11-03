@@ -1,0 +1,5 @@
+Flask>=3.1,<4
+numpy>=2,<3
+pydicom>=3,<4
+Pillow>=11,<13
+jsonschema>=4.18,<5

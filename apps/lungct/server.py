@@ -59,7 +59,8 @@ def create_app(service, *, enabled=False):
         actions={'createProject':service.create_project,'importStudy':service.import_study,'selectSeries':service.select_series,
                  'startDraft':service.start_draft,'getDraft':service.get_draft,'addFinding':service.add_finding,
                  'reviseFinding':service.revise_finding,'undoFinding':service.undo_finding,
-                 'completeCase':service.complete_case,'reopenCase':service.reopen_case,'findingHistory':service.finding_history}
+                 'completeCase':service.complete_case,'reopenCase':service.reopen_case,'findingHistory':service.finding_history,
+                 'startRun':service.start_run,'getRun':service.get_run}
         if name not in actions: raise ValueError('未知操作')
         return jsonify(actions[name](**payload))
 
@@ -97,10 +98,12 @@ def main():
     parser.add_argument('--data-dir',type=Path,default=Path('data/lungct'))
     parser.add_argument('--allow-root',action='append',default=[])
     parser.add_argument('--port',type=int,default=8766)
+    parser.add_argument('--model-bundle',type=Path)
     args=parser.parse_args()
     # No request logging: URLs and imported local paths never reach a log sink.
     logging.getLogger('werkzeug').disabled=True
-    service=Service(args.data_dir,allowed_roots=args.allow_root)
+    from .model import MonaiAdapter
+    service=Service(args.data_dir,allowed_roots=args.allow_root,model=MonaiAdapter(args.model_bundle) if args.model_bundle else None)
     create_app(service,enabled=args.enable_lungct).run(host='127.0.0.1',port=args.port,debug=False,use_reloader=False)
 
 

@@ -7,13 +7,15 @@ from .repository import Repository
 from .dicom_io import scan
 from .geometry import from_dict
 from .review import ReviewService
+from .model import ModelService
 
 
-class Service(ReviewService):
-    def __init__(self, root, *, allowed_roots=()):
+class Service(ReviewService,ModelService):
+    def __init__(self, root, *, allowed_roots=(), model=None):
         self.repo = Repository(root)
         self.root = self.repo.root
         self.allowed_roots = tuple(Path(p).resolve() for p in allowed_roots)
+        self.model=model
         (self.root/'volumes').mkdir(exist_ok=True)
 
     def create_project(self, name, operator):
