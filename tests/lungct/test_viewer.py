@@ -45,7 +45,7 @@ class ViewerTests(unittest.TestCase):
     def test_http_loopback_csrf_and_no_source_path_leak(self):
         from apps.lungct.server import create_app
         app=create_app(self.service,enabled=True);client=app.test_client()
-        self.assertEqual(client.get('/').status_code,200)
+        with client.get('/') as response:self.assertEqual(response.status_code,200)
         self.assertEqual(client.get('/',headers={'Host':'evil.example'}).status_code,403)
         token=client.get('/api/session').json['token']
         self.assertEqual(client.post('/api/action',json={'action':'createProject','name':'X','operator':'R'}).status_code,403)

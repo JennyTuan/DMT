@@ -1,0 +1,55 @@
+test_A03_10mm_6mm_physical_endpoints (test_review.ReviewTests.test_A03_10mm_6mm_physical_endpoints) ... ERROR
+test_A06_three_test_candidates_plus_manual (test_review.ReviewTests.test_A06_three_test_candidates_plus_manual) ... ERROR
+test_A07_stale_revision_undo_reopen_and_immutable_snapshot (test_review.ReviewTests.test_A07_stale_revision_undo_reopen_and_immutable_snapshot) ... ERROR
+test_measurement_constraints_and_completion_reasons (test_review.ReviewTests.test_measurement_constraints_and_completion_reasons) ... ERROR
+test_zero_confirmation_requires_explicit_confirmation (test_review.ReviewTests.test_zero_confirmation_requires_explicit_confirmation) ... ERROR
+
+======================================================================
+ERROR: test_A03_10mm_6mm_physical_endpoints (test_review.ReviewTests.test_A03_10mm_6mm_physical_endpoints)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_review.py", line 17, in setUp
+    self.draft=self.service.start_draft(self.project,self.series['series_key'],'OP')
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Service' object has no attribute 'start_draft'
+
+======================================================================
+ERROR: test_A06_three_test_candidates_plus_manual (test_review.ReviewTests.test_A06_three_test_candidates_plus_manual)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_review.py", line 17, in setUp
+    self.draft=self.service.start_draft(self.project,self.series['series_key'],'OP')
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Service' object has no attribute 'start_draft'
+
+======================================================================
+ERROR: test_A07_stale_revision_undo_reopen_and_immutable_snapshot (test_review.ReviewTests.test_A07_stale_revision_undo_reopen_and_immutable_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_review.py", line 17, in setUp
+    self.draft=self.service.start_draft(self.project,self.series['series_key'],'OP')
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Service' object has no attribute 'start_draft'
+
+======================================================================
+ERROR: test_measurement_constraints_and_completion_reasons (test_review.ReviewTests.test_measurement_constraints_and_completion_reasons)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_review.py", line 17, in setUp
+    self.draft=self.service.start_draft(self.project,self.series['series_key'],'OP')
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Service' object has no attribute 'start_draft'
+
+======================================================================
+ERROR: test_zero_confirmation_requires_explicit_confirmation (test_review.ReviewTests.test_zero_confirmation_requires_explicit_confirmation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_review.py", line 17, in setUp
+    self.draft=self.service.start_draft(self.project,self.series['series_key'],'OP')
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Service' object has no attribute 'start_draft'
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.443s
+
+FAILED (errors=5)

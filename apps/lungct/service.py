@@ -6,9 +6,10 @@ from .core import uid, now, code, owned
 from .repository import Repository
 from .dicom_io import scan
 from .geometry import from_dict
+from .review import ReviewService
 
 
-class Service:
+class Service(ReviewService):
     def __init__(self, root, *, allowed_roots=()):
         self.repo = Repository(root)
         self.root = self.repo.root

@@ -56,7 +56,10 @@ def create_app(service, *, enabled=False):
     @app.post('/api/action')
     def action():
         payload=request.get_json();name=payload.pop('action')
-        actions={'createProject':service.create_project,'importStudy':service.import_study,'selectSeries':service.select_series}
+        actions={'createProject':service.create_project,'importStudy':service.import_study,'selectSeries':service.select_series,
+                 'startDraft':service.start_draft,'getDraft':service.get_draft,'addFinding':service.add_finding,
+                 'reviseFinding':service.revise_finding,'undoFinding':service.undo_finding,
+                 'completeCase':service.complete_case,'reopenCase':service.reopen_case,'findingHistory':service.finding_history}
         if name not in actions: raise ValueError('未知操作')
         return jsonify(actions[name](**payload))
 
