@@ -1,0 +1,17 @@
+test_A01_geometry_order_dedup_and_project_isolation (test_import.ImportTests.test_A01_geometry_order_dedup_and_project_isolation) ... ok
+test_conflicting_uid_rejects_atomic_import (test_import.ImportTests.test_conflicting_uid_rejects_atomic_import) ... ok
+test_nonuniform_tilt_missing_geometry_and_contrast_are_blocked (test_import.ImportTests.test_nonuniform_tilt_missing_geometry_and_contrast_are_blocked) ... ok
+test_persistence_and_source_mapping (test_import.ImportTests.test_persistence_and_source_mapping) ... ok
+test_phi_name_and_burned_pixels_rejected (test_import.ImportTests.test_phi_name_and_burned_pixels_rejected) ... ok
+test_requires_authorization_and_allowed_directory (test_import.ImportTests.test_requires_authorization_and_allowed_directory) ... ok
+test_A02_original_lps_roundtrip_and_coronal_position (test_viewer.ViewerTests.test_A02_original_lps_roundtrip_and_coronal_position) ... ok
+test_http_loopback_csrf_and_no_source_path_leak (test_viewer.ViewerTests.test_http_loopback_csrf_and_no_source_path_leak) ... D:\STN02\DMT\tests\lungct\test_viewer.py:48: ResourceWarning: unclosed file <_io.BufferedReader name='D:\\STN02\\DMT\\apps\\lungct\\static/index.html'>
+  self.assertEqual(client.get('/').status_code,200)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_reversed_orientation_is_not_screen_side_guess (test_viewer.ViewerTests.test_reversed_orientation_is_not_screen_side_guess) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 1.643s
+
+OK

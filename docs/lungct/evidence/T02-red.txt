@@ -1,0 +1,32 @@
+test_A02_original_lps_roundtrip_and_coronal_position (test_viewer.ViewerTests.test_A02_original_lps_roundtrip_and_coronal_position) ... ERROR
+test_http_loopback_csrf_and_no_source_path_leak (test_viewer.ViewerTests.test_http_loopback_csrf_and_no_source_path_leak) ... ERROR
+test_reversed_orientation_is_not_screen_side_guess (test_viewer.ViewerTests.test_reversed_orientation_is_not_screen_side_guess) ... ERROR
+
+======================================================================
+ERROR: test_A02_original_lps_roundtrip_and_coronal_position (test_viewer.ViewerTests.test_A02_original_lps_roundtrip_and_coronal_position)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_viewer.py", line 18, in test_A02_original_lps_roundtrip_and_coronal_position
+    from apps.lungct.viewer import coronal, image_png, locate
+ModuleNotFoundError: No module named 'apps.lungct.viewer'
+
+======================================================================
+ERROR: test_http_loopback_csrf_and_no_source_path_leak (test_viewer.ViewerTests.test_http_loopback_csrf_and_no_source_path_leak)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_viewer.py", line 46, in test_http_loopback_csrf_and_no_source_path_leak
+    from apps.lungct.server import create_app
+ModuleNotFoundError: No module named 'apps.lungct.server'
+
+======================================================================
+ERROR: test_reversed_orientation_is_not_screen_side_guess (test_viewer.ViewerTests.test_reversed_orientation_is_not_screen_side_guess)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_viewer.py", line 34, in test_reversed_orientation_is_not_screen_side_guess
+    from apps.lungct.viewer import locate, coronal
+ModuleNotFoundError: No module named 'apps.lungct.viewer'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.289s
+
+FAILED (errors=3)
