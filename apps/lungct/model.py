@@ -11,11 +11,15 @@ from .geometry import patient_to_pixel
 from .review import create_finding
 
 POOL=ThreadPoolExecutor(max_workers=1,thread_name_prefix='lungct-local')
-PREPROCESS=dict(bundle_version='0.6.9',orientation='RAS',spacing=[.703125,.703125,1.25],hu_range=[-1024,300],nms=.22,patch=[512,512,192])
+PREPROCESS=dict(bundle_version='0.6.9',orientation='RAS',spacing=[.703125,.703125,1.25],hu_range=[-1024,300],nms=.22,patch=[512,512,192],cuda_amp=True)
 
 
 class MonaiAdapter:
-    def __init__(self,bundle):self.bundle=Path(bundle).resolve()
+    def __init__(self,bundle,*,profile='standard'):
+        if profile not in ('standard','low-memory'):raise ValueError('未知模型内存配置')
+        self.bundle=Path(bundle).resolve();self.profile=profile
+        self.preprocessing=deepcopy(PREPROCESS)
+        if profile=='low-memory':self.preprocessing['patch']=[256,256,96]
 
     def metadata(self):
         weights=self.bundle/'models'/'model.pt'
@@ -23,7 +27,8 @@ class MonaiAdapter:
         try:metadata=json.loads((self.bundle/'configs'/'metadata.json').read_text(encoding='utf-8'))
         except (OSError,ValueError):raise ValueError('MODEL_VERSION') from None
         if metadata.get('version')!='0.6.9':raise ValueError('MODEL_VERSION')
-        return dict(name='MONAI/lung_nodule_ct_detection',version='0.6.9',weight_sha256=hashlib.sha256(weights.read_bytes()).hexdigest(),preprocessing_sha256=digest(PREPROCESS),preprocessing=PREPROCESS,license='Apache-2.0')
+        from . import VERSION
+        return dict(name='MONAI/lung_nodule_ct_detection',version='0.6.9',weight_sha256=hashlib.sha256(weights.read_bytes()).hexdigest(),preprocessing_sha256=digest(self.preprocessing),preprocessing=deepcopy(self.preprocessing),execution_profile=self.profile,license='Apache-2.0',software_version=VERSION,adapter_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
 
     def predict(self,volume,geometry,threshold):
         # Requires a separate compatible environment; imports cannot affect manual mode.
@@ -35,9 +40,10 @@ class MonaiAdapter:
         from monai.apps.detection.networks.retinanet_network import RetinaNet,resnet_fpn_feature_extractor
         from monai.apps.detection.networks.retinanet_detector import RetinaNetDetector
         from monai.apps.detection.utils.anchor_utils import AnchorGeneratorWithAnchorShape
-        if monai.__version__!='1.4.0' or not torch.__version__.startswith('2.4.0'):raise ValueError('MODEL_DEPENDENCIES')
+        if monai.__version__!='1.4.0' or torch.__version__.split('+')[0] not in ('2.4.0','2.4.1'):raise ValueError('MODEL_DEPENDENCIES')
         torch.manual_seed(0);np.random.seed(0)
         device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        if device.type=='cuda':torch.cuda.reset_peak_memory_stats()
         backbone=resnet.resnet50(spatial_dims=3,n_input_channels=1,conv1_t_stride=[2,2,1],conv1_t_size=[7,7,7])
         features=resnet_fpn_feature_extractor(backbone,3,False,[1,2],None)
         network=RetinaNet(spatial_dims=3,num_classes=1,num_anchors=3,feature_extractor=features,size_divisible=[16,16,8],use_list_output=False)
@@ -45,9 +51,10 @@ class MonaiAdapter:
         network.load_state_dict(checkpoint.get('model',checkpoint),strict=True);network.to(device).eval()
         anchors=AnchorGeneratorWithAnchorShape(feature_map_scales=[1,2,4],base_anchor_shapes=[[6,8,4],[8,6,5],[10,10,6]])
         detector=RetinaNetDetector(network=network,anchor_generator=anchors,spatial_dims=3,num_classes=1,size_divisible=[16,16,8])
+        detector.eval()
         detector.set_target_keys(box_key='box',label_key='label')
         detector.set_box_selector_parameters(score_thresh=threshold,topk_candidates_per_level=1000,nms_thresh=.22,detections_per_img=300)
-        detector.set_sliding_window_inferer(roi_size=[512,512,192],overlap=.25,sw_batch_size=1,mode='constant',device='cpu')
+        detector.set_sliding_window_inferer(roi_size=self.preprocessing['patch'],overlap=.25,sw_batch_size=1,mode='constant',device='cpu')
         affine=np.eye(4);affine[:3,0]=np.asarray(geometry.row)*geometry.spacing[1]
         affine[:3,1]=np.asarray(geometry.column)*geometry.spacing[0]
         affine[:3,2]=np.asarray(geometry.normal)*np.median(np.diff(geometry.locations));affine[:3,3]=geometry.origins[0]
@@ -56,7 +63,8 @@ class MonaiAdapter:
         tensor=Spacing(pixdim=PREPROCESS['spacing'],mode='bilinear')(Orientation(axcodes='RAS')(tensor))
         model_to_lps=lps_ras @ np.asarray(tensor.affine.cpu())
         tensor=ScaleIntensityRange(a_min=-1024,a_max=300,b_min=0,b_max=1,clip=True)(tensor)
-        with torch.inference_mode():pred=detector([tensor.to(device)],use_inferer=True)[0]
+        with torch.inference_mode(), torch.autocast(device_type=device.type,enabled=device.type=='cuda'):
+            pred=detector([tensor.to(device)],use_inferer=True)[0]
         candidates=[]
         for box,score in zip(pred['box'].detach().cpu().numpy(),pred['label_scores'].detach().cpu().numpy()):
             low=np.maximum(box[:3],0);high=np.minimum(box[3:],np.asarray(tensor.shape[1:])-1)
@@ -64,7 +72,13 @@ class MonaiAdapter:
             corners=np.array([[x,y,z,1] for x in (low[0],high[0]) for y in (low[1],high[1]) for z in (low[2],high[2])])
             world=(corners @ model_to_lps.T)[:,:3];lo=world.min(0);hi=world.max(0)
             candidates.append(dict(center_lps=((lo+hi)/2).tolist(),box_lps=np.r_[lo,hi].tolist(),score=float(score)))
-        return dict(candidates=candidates,model_to_lps=model_to_lps.tolist())
+        import platform
+        runtime=dict(python=platform.python_version(),torch=torch.__version__,monai=monai.__version__,
+            numpy=np.__version__,device=torch.cuda.get_device_name(0) if device.type=='cuda' else 'CPU',
+            cuda=torch.version.cuda,precision='cuda_autocast_float16' if device.type=='cuda' else 'float32')
+        if device.type=='cuda':
+            runtime.update(cuda_peak_allocated_bytes=torch.cuda.max_memory_allocated(),cuda_peak_reserved_bytes=torch.cuda.max_memory_reserved())
+        return dict(candidates=candidates,model_to_lps=model_to_lps.tolist(),runtime=runtime)
 
 
 class ModelService:
@@ -109,6 +123,7 @@ class ModelService:
                 if np.any(center<box[:3]) or np.any(center>box[3:]):raise ValueError('INVALID_RESULTS')
             with self.repo.transaction() as state:
                 run=state['runs'][rid];series=state['series'][run['series_key']]
+                if 'runtime' in result:run['model']['runtime']=deepcopy(result['runtime'])
                 # Temporary branch builds all immutable originals in this single transaction.
                 staging=dict(project_id=project,series_key=run['series_key'],study_key=series['study_key'],heads={},version=0)
                 original_case_status=state['studies'][series['study_key']]['status']

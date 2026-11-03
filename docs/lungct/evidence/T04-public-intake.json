@@ -1,0 +1,19 @@
+{
+  "public_case": "NLST-100206",
+  "slice_count": 160,
+  "thickness_mm": 2.0,
+  "qc_metrics": {
+    "tilt_degrees": 0.0,
+    "step_mm": 2.0,
+    "max_step_error_mm": 1.4210854715202004e-14
+  },
+  "original_files_preserved": true,
+  "pixel_bytes_preserved": true,
+  "reference_manual_segments": 6,
+  "original_manifest_sha256": "c0f84b90c0dd7f8aa81fa98dbd7ccebb11535a8d92deadaa2b40110853058572",
+  "intake_audit_sha256": "7ea04d9a21f68799f8c8c3d9673c13f743bd644846c1e558b93655fce69f4f07",
+  "source_license": "CC BY 4.0",
+  "agent_pixel_montage_review": "160/160 visible at montage scale; no identifying text observed; not an authorized human review",
+  "human_intake_confirmation": null,
+  "human_candidate_confirmation": null
+}

@@ -18,6 +18,21 @@ class ProtocolFixture:
 
 
 class ModelTests(unittest.TestCase):
+    def test_memory_profiles_are_explicit_and_have_distinct_provenance(self):
+        from apps.lungct.model import MonaiAdapter
+        import json
+        with tempfile.TemporaryDirectory() as directory:
+            bundle=Path(directory);(bundle/'models').mkdir();(bundle/'configs').mkdir()
+            (bundle/'models/model.pt').write_bytes(b'configuration-test-only')
+            (bundle/'configs/metadata.json').write_text(json.dumps({'version':'0.6.9'}))
+            standard=MonaiAdapter(bundle).metadata()
+            low=MonaiAdapter(bundle,profile='low-memory').metadata()
+            self.assertEqual(standard['preprocessing']['patch'],[512,512,192])
+            self.assertEqual(low['preprocessing']['patch'],[256,256,96])
+            self.assertNotEqual(standard['preprocessing_sha256'],low['preprocessing_sha256'])
+            self.assertEqual(standard['weight_sha256'],low['weight_sha256'])
+            with self.assertRaises(ValueError):MonaiAdapter(bundle,profile='unknown')
+
     def setUp(self):
         from apps.lungct.service import Service
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
@@ -64,6 +79,16 @@ class ModelTests(unittest.TestCase):
         from apps.lungct.model import MonaiAdapter
         adapter=MonaiAdapter(self.root/'missing')
         with self.assertRaisesRegex(ValueError,'WEIGHTS_MISSING'):adapter.metadata()
+
+    def test_restart_marks_interrupted_task_failed_not_zero(self):
+        from apps.lungct.service import Service
+        run=self.run_model('interrupted',None)
+        with self.service.repo.transaction() as state:
+            state['runs'][run['run_id']].update(state='running',error_code=None,message='正在分析')
+        restarted=Service(self.root/'store',allowed_roots=[self.root])
+        result=restarted.get_run(self.project,run['run_id'])
+        self.assertEqual(result['error_code'],'INTERRUPTED')
+        self.assertEqual(result['state'],'failed');self.assertIsNone(result['candidate_count'])
 
 
 if __name__=='__main__':unittest.main()

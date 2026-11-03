@@ -1,0 +1,9 @@
+# Keep lung CT adapter source hashes reproducible across Windows/Linux checkouts.
+apps/lungct/** text eol=lf
+tests/lungct/** text eol=lf
+tools/lungct/** text eol=lf
+schemas/lungct/** text eol=lf
+docs/lungct/** text eol=lf
+docs/lungct/**/*.png -text
+# These exported artifact bytes are covered by manifest SHA-256 checksums.
+docs/lungct/evidence/R017-synthetic-export/* -text

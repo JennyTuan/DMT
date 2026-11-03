@@ -1,0 +1,826 @@
+{
+  "acceptance": "A04_PARTIAL_TECHNICAL_RUNS_SUCCEEDED_HUMAN_REVIEW_PENDING",
+  "production_run_id": null,
+  "note": "Qualification IDs are isolated real-adapter experiments, not application Run records.",
+  "repeated_low_memory_candidates_identical": true,
+  "repeated_model_to_lps_identical": true,
+  "experiments": [
+    {
+      "qualification_id": "qualification_3903dfbe3bf24f3787d72cc8b65ab007",
+      "created_at": "2026-11-03T06:46:02.251810+00:00",
+      "status": "SUCCEEDED",
+      "human_acceptance": "PENDING",
+      "application_case_import": "NOT_PERFORMED_PENDING_HUMAN_INTAKE",
+      "public_case": "NLST-100206",
+      "license": "CC BY 4.0",
+      "source_doi": "10.7937/TCIA.HMQ8-J677",
+      "reference_doi": "10.7937/y2dx-e334",
+      "threshold": 0.02,
+      "network_connections": "BLOCKED_IN_PROCESS",
+      "runtime": {
+        "python": "3.11.16",
+        "torch": "2.4.1+cu121",
+        "monai": "1.4.0",
+        "numpy": "1.24.4",
+        "cuda": "12.1",
+        "device": "NVIDIA GeForce RTX 3060 Laptop GPU"
+      },
+      "input_sha256": "ab5587b203be92373fedc6922e4219ccfab4057c26128ab3f3bf3e5ecf8d753f",
+      "slice_count": 160,
+      "geometry_qc": {
+        "tilt_degrees": 0.0,
+        "step_mm": 2.0,
+        "max_step_error_mm": 1.4210854715202004e-14
+      },
+      "model": {
+        "name": "MONAI/lung_nodule_ct_detection",
+        "version": "0.6.9",
+        "weight_sha256": "b5e79231466adae93a6fe8e8594029e9add142914e223b879aa0343bb2402d01",
+        "preprocessing_sha256": "d3878e33d4aa7e8ce57b991cc8e71e1dd5cd1a6d8b59bec6685c94ba6a508110",
+        "preprocessing": {
+          "bundle_version": "0.6.9",
+          "orientation": "RAS",
+          "spacing": [
+            0.703125,
+            0.703125,
+            1.25
+          ],
+          "hu_range": [
+            -1024,
+            300
+          ],
+          "nms": 0.22,
+          "patch": [
+            512,
+            512,
+            192
+          ],
+          "cuda_amp": true
+        },
+        "license": "Apache-2.0"
+      },
+      "candidate_count": 8,
+      "result": {
+        "candidates": [
+          {
+            "center_lps": [
+              87.0866572277832,
+              -109.08328372070315,
+              -61.52418212890626
+            ],
+            "box_lps": [
+              83.40433830192566,
+              -112.7674050910187,
+              -65.28242187500001,
+              90.76897615364075,
+              -105.3991623503876,
+              -57.76594238281251
+            ],
+            "score": 0.9940428137779236,
+            "source_index": 128,
+            "source_pixel": [
+              386.64226217830884,
+              290.00988051470586
+            ]
+          },
+          {
+            "center_lps": [
+              -36.80770999023437,
+              -86.70516329833987,
+              -88.77149658203126
+            ],
+            "box_lps": [
+              -38.81820803710937,
+              -88.7248345000458,
+              -90.75641708374025,
+              -34.79721194335937,
+              -84.68549209663394,
+              -86.78657608032228
+            ],
+            "score": 0.9875683188438416,
+            "source_index": 115,
+            "source_pixel": [
+              200.07192095588235,
+              323.7086971507353
+            ]
+          },
+          {
+            "center_lps": [
+              -125.06903773376465,
+              -234.3111165148926,
+              -151.6428955078125
+            ],
+            "box_lps": [
+              -128.5950267893982,
+              -237.8261836154175,
+              -155.2358253479004,
+              -121.5430486781311,
+              -230.7960494143677,
+              -148.04996566772462
+            ],
+            "score": 0.16224725544452667,
+            "source_index": 83,
+            "source_pixel": [
+              67.16074505974265,
+              101.43149701286765
+            ]
+          },
+          {
+            "center_lps": [
+              -105.1279080493164,
+              -141.0679181201172,
+              -65.28822021484376
+            ],
+            "box_lps": [
+              -106.639086065979,
+              -142.6000388247681,
+              -66.76364974975587,
+              -103.6167300326538,
+              -139.53579741546633,
+              -63.81279067993165
+            ],
+            "score": 0.11818139255046844,
+            "source_index": 127,
+            "source_pixel": [
+              97.18974034926471,
+              241.84478400735293
+            ]
+          },
+          {
+            "center_lps": [
+              83.67935055664063,
+              -86.42243701049807,
+              -55.27113037109376
+            ],
+            "box_lps": [
+              81.98675865104676,
+              -88.12213140556338,
+              -57.01427536010743,
+              85.3719424622345,
+              -84.72274261543276,
+              -53.52798538208009
+            ],
+            "score": 0.05602938309311867,
+            "source_index": 132,
+            "source_pixel": [
+              381.51125919117646,
+              324.13444967830884
+            ]
+          },
+          {
+            "center_lps": [
+              57.13825935295105,
+              -182.4149640185547,
+              -75.51130371093751
+            ],
+            "box_lps": [
+              55.375168265609744,
+              -184.18749648162844,
+              -77.22324447631837,
+              58.90135044029236,
+              -180.64243155548098,
+              -73.79936294555665
+            ],
+            "score": 0.05429893732070923,
+            "source_index": 121,
+            "source_pixel": [
+              341.54349831973803,
+              179.58099724264707
+            ]
+          },
+          {
+            "center_lps": [
+              -49.85026246139526,
+              -172.3391278369141,
+              -105.9689910888672
+            ],
+            "box_lps": [
+              -51.64221411773681,
+              -174.15058451721194,
+              -107.68552856445314,
+              -48.05831080505371,
+              -170.52767115661624,
+              -104.25245361328126
+            ],
+            "score": 0.029063187539577484,
+            "source_index": 106,
+            "source_pixel": [
+              180.43137135225183,
+              194.75402113970588
+            ]
+          },
+          {
+            "center_lps": [
+              -93.24979907104492,
+              -79.53907328674319,
+              -100.2811248779297
+            ],
+            "box_lps": [
+              -96.07176190444946,
+              -82.36068206855776,
+              -103.27783660888673,
+              -90.42783623764038,
+              -76.71746450492861,
+              -97.28441314697267
+            ],
+            "score": 0.022846199572086334,
+            "source_index": 109,
+            "source_pixel": [
+              115.07677504595588,
+              334.49998563878677
+            ]
+          }
+        ],
+        "model_to_lps": [
+          [
+            -0.703125,
+            0.0,
+            0.0,
+            169.6679675
+          ],
+          [
+            0.0,
+            -0.703125,
+            0.0,
+            37.667967499999975
+          ],
+          [
+            0.0,
+            0.0,
+            1.25,
+            -318.3
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
+      },
+      "reference_extent_matches": [
+        {
+          "candidate_index": 4,
+          "reference_segment": 2,
+          "center_distance_mm": 0.9055598655649091,
+          "center_inside_reference_extent": true,
+          "score": 0.05602938309311867,
+          "source_index": 132
+        },
+        {
+          "candidate_index": 5,
+          "reference_segment": 5,
+          "center_distance_mm": 0.0812291553785468,
+          "center_inside_reference_extent": true,
+          "score": 0.05429893732070923,
+          "source_index": 121
+        }
+      ],
+      "comparison_definition": "Candidate center inside one published MANUAL segment bounding extent; not a performance metric or human acceptance.",
+      "elapsed_seconds": 131.90599999999904,
+      "cuda_peak_allocated_bytes": 9521035264,
+      "cuda_peak_reserved_bytes": 10122952704
+    },
+    {
+      "qualification_id": "qualification_80b6a79e685240a3a94d53b7054077b5",
+      "created_at": "2026-11-03T06:49:41.143641+00:00",
+      "status": "SUCCEEDED",
+      "human_acceptance": "PENDING",
+      "application_case_import": "NOT_PERFORMED_PENDING_HUMAN_INTAKE",
+      "public_case": "NLST-100206",
+      "license": "CC BY 4.0",
+      "source_doi": "10.7937/TCIA.HMQ8-J677",
+      "reference_doi": "10.7937/y2dx-e334",
+      "threshold": 0.02,
+      "network_connections": "BLOCKED_IN_PROCESS",
+      "runtime": {
+        "python": "3.11.16",
+        "torch": "2.4.1+cu121",
+        "monai": "1.4.0",
+        "numpy": "1.24.4",
+        "cuda": "12.1",
+        "device": "NVIDIA GeForce RTX 3060 Laptop GPU"
+      },
+      "input_sha256": "ab5587b203be92373fedc6922e4219ccfab4057c26128ab3f3bf3e5ecf8d753f",
+      "slice_count": 160,
+      "geometry_qc": {
+        "tilt_degrees": 0.0,
+        "step_mm": 2.0,
+        "max_step_error_mm": 1.4210854715202004e-14
+      },
+      "model": {
+        "name": "MONAI/lung_nodule_ct_detection",
+        "version": "0.6.9",
+        "weight_sha256": "b5e79231466adae93a6fe8e8594029e9add142914e223b879aa0343bb2402d01",
+        "preprocessing_sha256": "ffed4be32478863defee120c120c1a69924a95933734b8748f4dc97f3bd2eb70",
+        "preprocessing": {
+          "bundle_version": "0.6.9",
+          "orientation": "RAS",
+          "spacing": [
+            0.703125,
+            0.703125,
+            1.25
+          ],
+          "hu_range": [
+            -1024,
+            300
+          ],
+          "nms": 0.22,
+          "patch": [
+            256,
+            256,
+            96
+          ],
+          "cuda_amp": true
+        },
+        "execution_profile": "low-memory",
+        "license": "Apache-2.0"
+      },
+      "candidate_count": 7,
+      "result": {
+        "candidates": [
+          {
+            "center_lps": [
+              -36.808911619873044,
+              -86.70361834594729,
+              -88.66975860595704
+            ],
+            "box_lps": [
+              -38.848570643157956,
+              -88.75378089973452,
+              -90.66524581909181,
+              -34.76925259658813,
+              -84.65345579216006,
+              -86.67427139282228
+            ],
+            "score": 0.9923638105392456,
+            "source_index": 115,
+            "source_pixel": [
+              200.0701114430147,
+              323.7110236672794
+            ]
+          },
+          {
+            "center_lps": [
+              87.09094876220703,
+              -109.08993559906008,
+              -61.54008941650392
+            ],
+            "box_lps": [
+              83.420967997818,
+              -112.76820975372317,
+              -65.30014114379884,
+              90.76092952659607,
+              -105.411661444397,
+              -57.780037689208996
+            ],
+            "score": 0.9896518588066101,
+            "source_index": 128,
+            "source_pixel": [
+              386.6487247242647,
+              289.99986356847427
+            ]
+          },
+          {
+            "center_lps": [
+              -125.06431704589843,
+              -234.3036063296509,
+              -151.64976196289064
+            ],
+            "box_lps": [
+              -128.6175573451233,
+              -237.84540968963626,
+              -155.32009201049806,
+              -121.51107674667358,
+              -230.76180296966555,
+              -147.97943191528321
+            ],
+            "score": 0.11651245504617691,
+            "source_index": 83,
+            "source_pixel": [
+              67.16785386029412,
+              101.44280646829044
+            ]
+          },
+          {
+            "center_lps": [
+              83.63815182617188,
+              -86.41767340728762,
+              -55.312176513671886
+            ],
+            "box_lps": [
+              81.90753692558289,
+              -88.14793425628665,
+              -57.048531341552746,
+              85.36876672676087,
+              -84.6874125582886,
+              -53.57582168579103
+            ],
+            "score": 0.05374995246529579,
+            "source_index": 131,
+            "source_pixel": [
+              381.44921875,
+              324.1416231043199
+            ]
+          },
+          {
+            "center_lps": [
+              -105.25669699737549,
+              -141.21748882362368,
+              -65.27004318237306
+            ],
+            "box_lps": [
+              -106.9940174205017,
+              -142.48590546676638,
+              -67.01715545654298,
+              -103.51937657424926,
+              -139.94907218048098,
+              -63.522930908203136
+            ],
+            "score": 0.05039290338754654,
+            "source_index": 127,
+            "source_pixel": [
+              96.99579934512867,
+              241.61954812442556
+            ]
+          },
+          {
+            "center_lps": [
+              -93.74632960388183,
+              -79.98668032714846,
+              -100.80869750976564
+            ],
+            "box_lps": [
+              -96.35616189071655,
+              -82.61470871994021,
+              -103.52068023681642,
+              -91.13649731704712,
+              -77.35865193435671,
+              -98.09671478271486
+            ],
+            "score": 0.02623034454882145,
+            "source_index": 109,
+            "source_pixel": [
+              114.32905847886029,
+              333.82594209558823
+            ]
+          },
+          {
+            "center_lps": [
+              57.133688868789676,
+              -182.41839724609378,
+              -75.49360351562501
+            ],
+            "box_lps": [
+              55.38527482917786,
+              -184.1721971614075,
+              -77.20022277832032,
+              58.88210290840149,
+              -180.66459733078005,
+              -73.7869842529297
+            ],
+            "score": 0.02560172975063324,
+            "source_index": 121,
+            "source_pixel": [
+              341.536615708295,
+              179.57582720588235
+            ]
+          }
+        ],
+        "model_to_lps": [
+          [
+            -0.703125,
+            0.0,
+            0.0,
+            169.6679675
+          ],
+          [
+            0.0,
+            -0.703125,
+            0.0,
+            37.667967499999975
+          ],
+          [
+            0.0,
+            0.0,
+            1.25,
+            -318.3
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "runtime": {
+          "python": "3.11.16",
+          "torch": "2.4.1+cu121",
+          "monai": "1.4.0",
+          "numpy": "1.24.4",
+          "device": "NVIDIA GeForce RTX 3060 Laptop GPU",
+          "cuda": "12.1",
+          "precision": "cuda_autocast_float16",
+          "cuda_peak_allocated_bytes": 1699881472,
+          "cuda_peak_reserved_bytes": 2006974464
+        }
+      },
+      "reference_extent_matches": [
+        {
+          "candidate_index": 3,
+          "reference_segment": 2,
+          "center_distance_mm": 0.9518576607624599,
+          "center_inside_reference_extent": true,
+          "score": 0.05374995246529579,
+          "source_index": 131
+        },
+        {
+          "candidate_index": 6,
+          "reference_segment": 5,
+          "center_distance_mm": 0.06754046267737487,
+          "center_inside_reference_extent": true,
+          "score": 0.02560172975063324,
+          "source_index": 121
+        }
+      ],
+      "comparison_definition": "Candidate center inside one published MANUAL segment bounding extent; not a performance metric or human acceptance.",
+      "elapsed_seconds": 30.014999999999418,
+      "cuda_peak_allocated_bytes": 1699881472,
+      "cuda_peak_reserved_bytes": 2006974464
+    },
+    {
+      "qualification_id": "qualification_e130f720b3134a238dc4dbca2d5e12cd",
+      "created_at": "2026-11-03T06:51:15.434290+00:00",
+      "status": "SUCCEEDED",
+      "human_acceptance": "PENDING",
+      "application_case_import": "NOT_PERFORMED_PENDING_HUMAN_INTAKE",
+      "public_case": "NLST-100206",
+      "license": "CC BY 4.0",
+      "source_doi": "10.7937/TCIA.HMQ8-J677",
+      "reference_doi": "10.7937/y2dx-e334",
+      "threshold": 0.02,
+      "network_connections": "BLOCKED_IN_PROCESS",
+      "runtime": {
+        "python": "3.11.16",
+        "torch": "2.4.1+cu121",
+        "monai": "1.4.0",
+        "numpy": "1.24.4",
+        "cuda": "12.1",
+        "device": "NVIDIA GeForce RTX 3060 Laptop GPU"
+      },
+      "input_sha256": "ab5587b203be92373fedc6922e4219ccfab4057c26128ab3f3bf3e5ecf8d753f",
+      "slice_count": 160,
+      "geometry_qc": {
+        "tilt_degrees": 0.0,
+        "step_mm": 2.0,
+        "max_step_error_mm": 1.4210854715202004e-14
+      },
+      "model": {
+        "name": "MONAI/lung_nodule_ct_detection",
+        "version": "0.6.9",
+        "weight_sha256": "b5e79231466adae93a6fe8e8594029e9add142914e223b879aa0343bb2402d01",
+        "preprocessing_sha256": "ffed4be32478863defee120c120c1a69924a95933734b8748f4dc97f3bd2eb70",
+        "preprocessing": {
+          "bundle_version": "0.6.9",
+          "orientation": "RAS",
+          "spacing": [
+            0.703125,
+            0.703125,
+            1.25
+          ],
+          "hu_range": [
+            -1024,
+            300
+          ],
+          "nms": 0.22,
+          "patch": [
+            256,
+            256,
+            96
+          ],
+          "cuda_amp": true
+        },
+        "execution_profile": "low-memory",
+        "license": "Apache-2.0",
+        "software_version": "0.1.0",
+        "adapter_sha256": "ddcbfd9c65057c677188ac9254b7142ccb815cef650ff4d99ba135a33a753c62"
+      },
+      "candidate_count": 7,
+      "result": {
+        "candidates": [
+          {
+            "center_lps": [
+              -36.808911619873044,
+              -86.70361834594729,
+              -88.66975860595704
+            ],
+            "box_lps": [
+              -38.848570643157956,
+              -88.75378089973452,
+              -90.66524581909181,
+              -34.76925259658813,
+              -84.65345579216006,
+              -86.67427139282228
+            ],
+            "score": 0.9923638105392456,
+            "source_index": 115,
+            "source_pixel": [
+              200.0701114430147,
+              323.7110236672794
+            ]
+          },
+          {
+            "center_lps": [
+              87.09094876220703,
+              -109.08993559906008,
+              -61.54008941650392
+            ],
+            "box_lps": [
+              83.420967997818,
+              -112.76820975372317,
+              -65.30014114379884,
+              90.76092952659607,
+              -105.411661444397,
+              -57.780037689208996
+            ],
+            "score": 0.9896518588066101,
+            "source_index": 128,
+            "source_pixel": [
+              386.6487247242647,
+              289.99986356847427
+            ]
+          },
+          {
+            "center_lps": [
+              -125.06431704589843,
+              -234.3036063296509,
+              -151.64976196289064
+            ],
+            "box_lps": [
+              -128.6175573451233,
+              -237.84540968963626,
+              -155.32009201049806,
+              -121.51107674667358,
+              -230.76180296966555,
+              -147.97943191528321
+            ],
+            "score": 0.11651245504617691,
+            "source_index": 83,
+            "source_pixel": [
+              67.16785386029412,
+              101.44280646829044
+            ]
+          },
+          {
+            "center_lps": [
+              83.63815182617188,
+              -86.41767340728762,
+              -55.312176513671886
+            ],
+            "box_lps": [
+              81.90753692558289,
+              -88.14793425628665,
+              -57.048531341552746,
+              85.36876672676087,
+              -84.6874125582886,
+              -53.57582168579103
+            ],
+            "score": 0.05374995246529579,
+            "source_index": 131,
+            "source_pixel": [
+              381.44921875,
+              324.1416231043199
+            ]
+          },
+          {
+            "center_lps": [
+              -105.25669699737549,
+              -141.21748882362368,
+              -65.27004318237306
+            ],
+            "box_lps": [
+              -106.9940174205017,
+              -142.48590546676638,
+              -67.01715545654298,
+              -103.51937657424926,
+              -139.94907218048098,
+              -63.522930908203136
+            ],
+            "score": 0.05039290338754654,
+            "source_index": 127,
+            "source_pixel": [
+              96.99579934512867,
+              241.61954812442556
+            ]
+          },
+          {
+            "center_lps": [
+              -93.74632960388183,
+              -79.98668032714846,
+              -100.80869750976564
+            ],
+            "box_lps": [
+              -96.35616189071655,
+              -82.61470871994021,
+              -103.52068023681642,
+              -91.13649731704712,
+              -77.35865193435671,
+              -98.09671478271486
+            ],
+            "score": 0.02623034454882145,
+            "source_index": 109,
+            "source_pixel": [
+              114.32905847886029,
+              333.82594209558823
+            ]
+          },
+          {
+            "center_lps": [
+              57.133688868789676,
+              -182.41839724609378,
+              -75.49360351562501
+            ],
+            "box_lps": [
+              55.38527482917786,
+              -184.1721971614075,
+              -77.20022277832032,
+              58.88210290840149,
+              -180.66459733078005,
+              -73.7869842529297
+            ],
+            "score": 0.02560172975063324,
+            "source_index": 121,
+            "source_pixel": [
+              341.536615708295,
+              179.57582720588235
+            ]
+          }
+        ],
+        "model_to_lps": [
+          [
+            -0.703125,
+            0.0,
+            0.0,
+            169.6679675
+          ],
+          [
+            0.0,
+            -0.703125,
+            0.0,
+            37.667967499999975
+          ],
+          [
+            0.0,
+            0.0,
+            1.25,
+            -318.3
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "runtime": {
+          "python": "3.11.16",
+          "torch": "2.4.1+cu121",
+          "monai": "1.4.0",
+          "numpy": "1.24.4",
+          "device": "NVIDIA GeForce RTX 3060 Laptop GPU",
+          "cuda": "12.1",
+          "precision": "cuda_autocast_float16",
+          "cuda_peak_allocated_bytes": 1699881472,
+          "cuda_peak_reserved_bytes": 2006974464
+        }
+      },
+      "reference_extent_matches": [
+        {
+          "candidate_index": 3,
+          "reference_segment": 2,
+          "center_distance_mm": 0.9518576607624599,
+          "center_inside_reference_extent": true,
+          "score": 0.05374995246529579,
+          "source_index": 131
+        },
+        {
+          "candidate_index": 6,
+          "reference_segment": 5,
+          "center_distance_mm": 0.06754046267737487,
+          "center_inside_reference_extent": true,
+          "score": 0.02560172975063324,
+          "source_index": 121
+        }
+      ],
+      "comparison_definition": "Candidate center inside one published MANUAL segment bounding extent; not a performance metric or human acceptance.",
+      "elapsed_seconds": 30.014999999999418,
+      "cuda_peak_allocated_bytes": 1699881472,
+      "cuda_peak_reserved_bytes": 2006974464
+    }
+  ],
+  "pending": [
+    "Authorized-person pixel review and per-case intake confirmation",
+    "Human candidate-source location confirmation",
+    "Approved real application import -> Run -> review -> snapshot -> export chain"
+  ]
+}

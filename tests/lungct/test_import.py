@@ -90,5 +90,23 @@ class ImportTests(unittest.TestCase):
         self.assertEqual(v.shape,(9,64,64));self.assertEqual(float(v[0,0,0]),-924)
         self.assertEqual(len(set(s['slice_keys'])),9)
 
+    def test_same_study_with_different_subject_series_is_rejected(self):
+        study,_=make_ct(self.input/'one')
+        self.service.import_study(self.project,self.input/'one',SOURCE)
+        make_ct(self.input/'two',study=study)
+        for p in (self.input/'two').glob('*.dcm'):
+            d=pydicom.dcmread(p);d.PatientID='DIFFERENT-SUBJECT';d.save_as(p,enforce_file_format=True)
+        with self.assertRaisesRegex(ValueError,'SUBJECT_CONFLICT'):
+            self.service.import_study(self.project,self.input/'two',SOURCE)
+        other=self.service.create_project('OTHER','OP')['project_id']
+        with self.assertRaisesRegex(ValueError,'SUBJECT_CONFLICT'):
+            self.service.import_study(other,self.input,SOURCE)
+        self.assertEqual(len(self.service.state(other)['studies']),0)
+
+    def test_implicit_vr_little_endian_is_supported(self):
+        from pydicom.uid import ImplicitVRLittleEndian
+        r=self.load(syntax=ImplicitVRLittleEndian)
+        self.assertTrue(r['series'][0]['eligible'])
+
 
 if __name__=='__main__':unittest.main()

@@ -1,4 +1,5 @@
 /.venv/
+/.venv-lungct-model/
 /data/
 *.[dD][cC][mM]
 __pycache__/

@@ -48,7 +48,7 @@ def create_app(service, *, enabled=False):
     def index(): return send_from_directory(app.static_folder,'index.html')
 
     @app.get('/api/session')
-    def session(): return jsonify(token=token,notice='仅供科研，不用于临床诊断')
+    def session(): return jsonify(token=token,notice='仅供科研，不用于临床诊断',model_configured=service.model is not None)
 
     @app.get('/api/state')
     def state(): return jsonify(service.state(request.args.get('project')))
@@ -100,11 +100,12 @@ def main():
     parser.add_argument('--allow-root',action='append',default=[])
     parser.add_argument('--port',type=int,default=8766)
     parser.add_argument('--model-bundle',type=Path)
+    parser.add_argument('--model-profile',choices=['standard','low-memory'],default='standard')
     args=parser.parse_args()
     # No request logging: URLs and imported local paths never reach a log sink.
     logging.getLogger('werkzeug').disabled=True
     from .model import MonaiAdapter
-    service=Service(args.data_dir,allowed_roots=args.allow_root,model=MonaiAdapter(args.model_bundle) if args.model_bundle else None)
+    service=Service(args.data_dir,allowed_roots=args.allow_root,model=MonaiAdapter(args.model_bundle,profile=args.model_profile) if args.model_bundle else None)
     create_app(service,enabled=args.enable_lungct).run(host='127.0.0.1',port=args.port,debug=False,use_reloader=False)
 
 

@@ -1,0 +1,20 @@
+test_A05_missing_failure_and_true_zero_are_distinct (test_model.ModelTests.test_A05_missing_failure_and_true_zero_are_distinct) ... ok
+test_memory_profiles_are_explicit_and_have_distinct_provenance (test_model.ModelTests.test_memory_profiles_are_explicit_and_have_distinct_provenance) ... ERROR
+test_new_run_cannot_overwrite_review_branch (test_model.ModelTests.test_new_run_cannot_overwrite_review_branch) ... ok
+test_partial_results_rejected_and_request_is_idempotent (test_model.ModelTests.test_partial_results_rejected_and_request_is_idempotent) ... ok
+test_real_adapter_refuses_missing_weights (test_model.ModelTests.test_real_adapter_refuses_missing_weights) ... ok
+test_restart_marks_interrupted_task_failed_not_zero (test_model.ModelTests.test_restart_marks_interrupted_task_failed_not_zero) ... ok
+
+======================================================================
+ERROR: test_memory_profiles_are_explicit_and_have_distinct_provenance (test_model.ModelTests.test_memory_profiles_are_explicit_and_have_distinct_provenance)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\STN02\DMT\tests\lungct\test_model.py", line 29, in test_memory_profiles_are_explicit_and_have_distinct_provenance
+    low=MonaiAdapter(bundle,profile='low-memory').metadata()
+        ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: MonaiAdapter.__init__() got an unexpected keyword argument 'profile'
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.909s
+
+FAILED (errors=1)
