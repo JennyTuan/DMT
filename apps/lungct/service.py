@@ -12,11 +12,12 @@ from .export import ExportService
 
 
 class Service(ReviewService,ModelService,ExportService):
-    def __init__(self, root, *, allowed_roots=(), model=None):
+    def __init__(self, root, *, allowed_roots=(), model=None, models=()):
         self.repo = Repository(root)
         self.root = self.repo.root
         self.allowed_roots = tuple(Path(p).resolve() for p in allowed_roots)
         self.model=model
+        self.models=tuple(models)
         (self.root/'volumes').mkdir(exist_ok=True)
         with self.repo.transaction() as state:
             for run in state['runs'].values():
@@ -79,3 +80,15 @@ class Service(ReviewService,ModelService,ExportService):
         selected=owned(self.repo.read(),'series',series,project)
         if not selected['eligible']: raise ValueError('质控未通过，不能定量或推理')
         return np.load(self.root/'volumes'/f'{series}.npy',allow_pickle=False,mmap_mode='r'),from_dict(selected['geometry'])
+
+    def series_info(self, project, series):
+        import re
+        import pydicom
+        state=self.repo.read()
+        selected=owned(state,'series',series,project)
+        source=state['sources'][selected['slice_keys'][0]]
+        ds=pydicom.dcmread(source['path'],stop_before_pixels=True)
+        age=str(ds.get('PatientAge',''))
+        sex=str(ds.get('PatientSex',''))
+        return dict(age=age if re.fullmatch(r'\d{3}[YMWD]',age) else None,
+                    sex=sex if sex in ('M','F','O') else None)

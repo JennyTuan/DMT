@@ -8,7 +8,16 @@
 
 ## 肺 CT 入口（P0）
 
+**本机从零测试**：可导入的合成 CT 体模已放在 `data/lungct-demo`；启动命令、每一步点击操作、导出与回查见 [本机测试操作手册](docs/lungct/LOCAL_TEST_GUIDE.md)。
+
 已具备本地 DICOM 导入与质控、轴位和冠状定位、人工补标/复核/10/6 mm 测量验证、追加修订、冻结快照、项目 CSV/JSON 导出和源片回查。仅支持成人非增强胸部 CT、规则近轴位、单帧未压缩 Little Endian、层厚 ≤2.5 mm。增强、定位像、不规则几何等会拦截；P1/P2 未实现。
+
+首次启动或更新阅片引擎后，从仓库根目录构建本地 Cornerstone3D 资源。构建完成后，工作站运行时可离线阅片。
+
+```powershell
+npm --prefix apps/lungct ci
+npm --prefix apps/lungct run build
+```
 
 ```powershell
 # 人工模式，依赖见 apps/lungct/requirements.txt

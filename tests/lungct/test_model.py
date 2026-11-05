@@ -45,11 +45,46 @@ class ModelTests(unittest.TestCase):
     def run_model(self,key,adapter):
         self.service.model=adapter
         run=self.service.start_run(self.project,self.series['series_key'],key)
+        return self.wait_for_run(run)
+
+    def wait_for_run(self,run):
         for _ in range(100):
             result=self.service.get_run(self.project,run['run_id'])
             if result['state'] in ('failed','succeeded'):return result
             time.sleep(.02)
         self.fail('Model protocol task did not finish')
+
+    def test_analysis_uses_the_selected_detector_and_records_its_identity(self):
+        from apps.lungct.export import run_export
+        from apps.lungct.server import create_app
+        from apps.lungct.service import Service
+
+        first, second, segmenter = (ProtocolFixture(mode) for mode in ('one', 'zero', 'fail'))
+        for adapter, model_id, task in ((first, 'first', 'nodule-detection'),
+                                        (second, 'second', 'nodule-detection'),
+                                        (segmenter, 'segmenter', 'nodule-segmentation')):
+            adapter.selection = dict(id=model_id, label=model_id, task=task, version='1')
+        self.service = Service(self.root/'store', allowed_roots=[self.root], model=first,
+                               models=(second, segmenter))
+        client = create_app(self.service, enabled=True).test_client()
+        session = client.get('/api/session').json
+        self.assertEqual([model['id'] for model in session['analysis_models']], ['first', 'second'])
+        request = dict(action='startRun', project=self.project, series=self.series['series_key'],
+                       request_key='selected-model')
+        headers = {'X-LungCT-Token': session['token']}
+        self.assertEqual(client.post('/api/action', json=dict(request, model_id='segmenter'), headers=headers).status_code, 400)
+        self.assertEqual(self.service.state(self.project)['runs'], [])
+        response = client.post('/api/action', json=dict(request, model_id='second'), headers=headers)
+        self.assertEqual(response.status_code, 200)
+        result = self.wait_for_run(response.json)
+        self.assertEqual(result['candidate_count'], 0)
+        self.assertEqual(result['model_id'], 'second')
+        self.assertEqual(run_export(result)['model_id'], 'second')
+        self.assertEqual(client.post('/api/action', json=dict(request, model_id='second'), headers=headers).json['run_id'], result['run_id'])
+        self.assertEqual(client.post('/api/action', json=dict(request, model_id='first'), headers=headers).status_code, 400)
+        default = self.wait_for_run(self.service.start_run(self.project, self.series['series_key'], 'default-model'))
+        self.assertEqual(default['model_id'], 'first')
+        self.assertEqual(default['candidate_count'], 1)
 
     def test_A05_missing_failure_and_true_zero_are_distinct(self):
         missing=self.run_model('missing',None)
@@ -65,6 +100,20 @@ class ModelTests(unittest.TestCase):
         result=self.run_model('partial',ProtocolFixture('partial'))
         self.assertEqual(result['state'],'failed');self.assertEqual(result['finding_ids'],[])
         self.assertEqual(self.service.start_run(self.project,self.series['series_key'],'partial')['run_id'],result['run_id'])
+
+    def test_point_only_detection_is_reviewable_without_inventing_a_box(self):
+        class PointDetector(ProtocolFixture):
+            def predict(self, volume, geometry, threshold):
+                result = super().predict(volume, geometry, threshold)
+                result['candidates'][0]['box_lps'] = None
+                return result
+
+        run = self.run_model('point-only', PointDetector('one'))
+        self.assertEqual(run['state'], 'succeeded')
+        draft = self.service.start_draft(self.project, self.series['series_key'], 'OP', run['run_id'])
+        finding, = draft['findings']
+        self.assertEqual(finding['original']['center_lps'], [-6, -3, 6])
+        self.assertIsNone(finding['original']['box_lps'])
 
     def test_new_run_cannot_overwrite_review_branch(self):
         run=self.run_model('one',ProtocolFixture('one'))

@@ -52,9 +52,30 @@ class ViewerTests(unittest.TestCase):
         self.assertEqual(client.post('/api/action',json={'action':'createProject','name':'X','operator':'R'},headers={'X-LungCT-Token':token,'Origin':'https://evil.example'}).status_code,403)
         response=client.get('/api/state',query_string={'project':self.project})
         self.assertNotIn(str(self.root).encode(),response.data)
+        info=client.get('/api/series-info',query_string={'project':self.project,'series':self.series['series_key']})
+        self.assertEqual(info.json,{'age':'050Y','sex':None})
+        other=self.service.create_project('OTHER','OP')['project_id']
+        self.assertEqual(client.get('/api/series-info',query_string={'project':other,'series':self.series['series_key']}).status_code,400)
         self.assertEqual(client.get('/api/image',query_string={'project':self.project,'series':self.series['series_key'],'index':4}).status_code,200)
         self.assertEqual(client.get('/api/image',query_string={'project':self.project,'series':self.series['series_key'],'index':99}).status_code,400)
         with self.assertRaises(ValueError):create_app(self.service,enabled=False)
+
+    def test_raw_hu_frame_preserves_values_and_project_boundary(self):
+        from apps.lungct.server import create_app
+        client=create_app(self.service,enabled=True).test_client()
+        series=self.series['series_key']
+        query=dict(project=self.project,series=series,index=4,format='hu')
+        frame=client.get('/api/image',query_string=query)
+        self.assertEqual(frame.mimetype,'application/octet-stream')
+        volume,g=self.service.volume(self.project,series)
+        np.testing.assert_array_equal(np.frombuffer(frame.data,dtype='<f4').reshape(volume[4].shape),volume[4])
+        from apps.lungct.viewer import coronal
+        array,_=coronal(volume,g)
+        locator=client.get('/api/image',query_string={**query,'plane':'coronal'})
+        np.testing.assert_array_equal(np.frombuffer(locator.data,dtype='<f4').reshape(array.shape),array)
+        other=self.service.create_project('OTHER','OP')['project_id']
+        self.assertEqual(client.get('/api/image',query_string={**query,'project':other}).status_code,400)
+        self.assertEqual(client.get('/api/image',query_string=query,headers={'Sec-Fetch-Site':'cross-site'}).status_code,403)
 
 
 if __name__=='__main__':unittest.main()

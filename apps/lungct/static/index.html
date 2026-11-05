@@ -1,6 +1,95 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>肺结节 CT · 科研工作站</title><link rel="stylesheet" href="/static/style.css"></head>
-<body><header><strong>肺结节分析</strong><span id="context">研究项目 / 病例队列</span><span class="notice">仅供科研，不用于临床诊断</span><button id="queueButton">病例队列</button><button id="exportButton" disabled>导出预览</button></header>
-<section id="queue"><div class="sectionTitle"><h1>研究项目 / 病例队列</h1><span>本地离线 · 单次胸部 CT</span></div><div class="cards"><form id="projectForm"><h2>建立研究项目</h2><label>项目研究代号<input name="name" required placeholder="LUNG-2026"></label><label>操作者研究代号<input name="operator" required placeholder="READER-01"></label><button>创建项目</button></form><div><h2>继续项目</h2><select id="projects"><option value="">选择研究项目</option></select><p>仅使用获准的已脱敏数据。无需模型也可人工复核。</p><label>病例筛选<input id="caseFilter" placeholder="研究病例号"></label><label>复核状态<select id="caseStatus"><option value="">全部</option><option value="draft">草稿</option><option value="reviewing">复核中</option><option value="completed">已完成</option></select></label></div><form id="importForm"><h2>导入检查</h2><label>已批准本地目录<input name="directory" required placeholder="输入启动时批准的目录"></label><label>数据来源代号<input name="source_code" required placeholder="DATASET-01"></label><label>研究来源<select name="research_source"><option value="unknown">未知</option><option value="screening">筛查</option><option value="non_screening">非筛查</option></select></label><label class="check"><input type="checkbox" name="consent" required>确认授权、已脱敏、已核查像素烧录信息，且为成人胸部非增强 CT</label><button>导入检查</button></form></div><div id="cases"></div></section>
-<main id="workstation" hidden><div class="viewerColumn"><div class="toolbar"><span id="caseLabel"></span><label>窗位<input id="center" type="number" value="-600"></label><label>窗宽<input id="width" type="number" min="1" value="1500"></label><button id="lungWindow">肺窗</button><button id="resetView">重置视图</button><label class="check"><input id="overlays" type="checkbox" checked>叠加</label></div><div class="viewport"><canvas id="axial"></canvas><span id="loadingLabel" hidden>正在加载原始切片…</span><span id="leftLabel" class="orientation left"></span><span id="rightLabel" class="orientation right"></span><span id="topLabel" class="orientation top"></span><span id="imageLabel"></span></div><div class="toolbar"><button id="previousSlice">上一层</button><input id="slice" type="range" min="0" value="0"><button id="nextSlice">下一层</button><span id="sliceLabel"></span><button id="returnFinding">返回该结节</button></div><div class="toolbar tools"><button id="addFinding" disabled>手动添加</button><button id="longAxis" disabled>绘制长径</button><button id="shortAxis" disabled>绘制短径</button><span id="toolHint">滚轮翻层 · 右键拖动平移 · Ctrl+滚轮缩放</span></div></div><aside><section class="locator"><div class="sectionTitle"><strong>患者冠状定位</strong><span>右 R ← → L 左</span></div><canvas id="coronal"></canvas><p>只读定位 · 患者本人影像</p></section><section id="reviewPanel"><div class="sectionTitle"><strong>结节复核</strong><span id="count">0 项</span></div><div id="runStatus">未配置检测模型，可继续人工标注</div><div class="toolbar"><button id="startRun" disabled>开始 AI 分析</button><button id="manualDraft" disabled>人工复核</button></div><select id="findingFilter"><option value="">全部观察</option><option value="pending">待复核</option><option value="confirmed">已确认</option><option value="excluded">已排除</option><option value="uncertain">存疑</option></select><div id="findings"><p>尚无观察记录</p></div><div id="findingEditor"></div><div id="completion"></div></section></aside></main>
-<section id="exportPanel" hidden></section><footer><span id="status" role="status">准备就绪</span><span>研究数据仅保存在本机</span></footer><script type="module" src="/static/export-ui.js"></script></body></html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>肺结节 CT · 科研工作站</title><link rel="stylesheet" href="/static/style.css"><link rel="stylesheet" href="/static/workstation-theme.css"></head>
+<body><header><strong>肺结节分析</strong><span id="context" hidden></span><span class="notice">仅供科研，不用于临床诊断</span><button id="queueButton" hidden>返回病例列表</button><button id="exportButton" disabled>导出预览</button></header>
+<section id="queue"><div class="sectionTitle"><div><h1>病例列表</h1></div><span>本地离线 · 单次胸部 CT</span></div><div class="queueControls"><label>搜索病例<input id="caseFilter" placeholder="研究病例号"></label><label>复核状态<select id="caseStatus"><option value="">全部</option><option value="draft">草稿</option><option value="reviewing">复核中</option><option value="completed">已完成</option></select></label><button id="addCaseButton" type="button">添加病例</button></div><div id="cases"></div></section><dialog id="addCaseDialog" aria-labelledby="addCaseTitle"><div class="dialogHeading"><h2 id="addCaseTitle">添加病例</h2><button id="closeAddCase" type="button" aria-label="关闭添加病例">关闭</button></div><div class="cards"><div><h2>当前项目</h2><select id="projects"><option value="">选择研究项目</option></select><p>项目用于区分研究数据和导出范围。</p></div><form id="projectForm"><h2>建立研究项目</h2><label>项目研究代号<input name="name" required placeholder="LUNG-2026"></label><label>操作者研究代号<input name="operator" required placeholder="READER-01"></label><button>创建项目</button></form><form id="importForm"><h2>导入检查</h2><label>已批准本地目录<input name="directory" required placeholder="输入启动时批准的目录"></label><label>数据来源代号<input name="source_code" required placeholder="DATASET-01"></label><label>研究来源<select name="research_source"><option value="unknown">未知</option><option value="screening">筛查</option><option value="non_screening">非筛查</option></select></label><label class="check"><input type="checkbox" name="consent" required>确认授权、已脱敏、已核查像素烧录信息，且为成人胸部非增强 CT</label><button>导入检查</button></form></div></dialog>
+<main id="workstation" hidden>
+  <div class="viewerColumn">
+    <div class="toolbar imageToolbar" aria-label="图像工具">
+      <div class="imageToolGroup" role="group" aria-label="图像显示">
+        <span id="caseLabel"></span>
+        <label>窗位<input id="center" type="number" value="-600"></label>
+        <label>窗宽<input id="width" type="number" min="1" value="1500"></label>
+        <button id="lungWindow">肺窗</button>
+        <button id="mediastinumWindow">纵隔窗</button>
+        <label class="check"><input id="overlays" type="checkbox" checked>叠加</label>
+      </div>
+      <div class="imageToolGroup tools viewTools" role="group" aria-label="阅片操作">
+        <button data-view-tool="window" aria-pressed="true">调窗</button>
+        <button data-view-tool="pan" aria-pressed="false">平移</button>
+        <button data-view-tool="zoom" aria-pressed="false">缩放</button>
+        <button data-view-tool="probe" aria-pressed="false">HU 探针</button>
+        <div class="zoomControl" role="group" aria-label="缩放倍率">
+          <button id="zoomOut" aria-label="缩小一级">−</button><output id="zoomLabel">100%</output><button id="zoomIn" aria-label="放大一级">+</button>
+        </div>
+        <button id="returnFinding" disabled hidden>定位候选</button>
+        <button id="resetView">重置视图</button>
+      </div>
+      <div class="imageToolGroup tools" role="group" aria-label="标注与测量">
+        <button id="addPair" disabled>新增结节</button>
+        <button id="addFinding" disabled>仅标记位置</button>
+      </div>
+      <div id="reviewLayouts" class="layoutSwitch" role="group" aria-label="复核布局" hidden>
+        <button id="axialLayout" aria-pressed="true">轴位阅片</button>
+        <button id="coronalLayout" aria-pressed="false">冠状对照</button>
+      </div>
+    </div>
+    <div id="imageViews" class="imageViews">
+      <div class="viewport axialView">
+        <div id="axialViewport" class="ctViewport" aria-hidden="true"></div>
+        <canvas id="axial" aria-label="轴位原始切片" data-tool="window"></canvas>
+        <span class="planeLabel">轴位原片</span>
+        <span id="loadingLabel" hidden>正在加载原始切片…</span>
+        <span id="leftLabel" class="orientation left"></span><span id="rightLabel" class="orientation right"></span><span id="topLabel" class="orientation top"></span>
+        <span id="imageLabel"></span>
+        <span id="imageScale" hidden></span><span id="probeValue" hidden></span>
+      </div>
+    </div>
+    <div class="toolbar sliceToolbar">
+      <button id="previousSlice">上一层</button><input id="slice" type="range" min="0" value="0" aria-label="轴位切片"><button id="nextSlice">下一层</button><span id="sliceLabel"></span>
+    </div>
+    <div id="toolHint" aria-live="polite">左键拖动调窗 · 滚轮翻层 · Ctrl+滚轮以指针为中心缩放</div>
+  </div>
+  <aside class="workstationSide">
+    <section id="coronalView" class="locator">
+      <div class="sectionTitle"><strong>冠状定位</strong><span>右 R ← → L 左</span></div>
+      <div class="coronalImage">
+        <div id="coronalViewport" class="ctViewport" aria-hidden="true"></div>
+        <canvas id="coronal" aria-label="冠状定位图"></canvas>
+      </div>
+      <p>只读定位 · 患者本人影像</p>
+    </section>
+    <section id="analysisPanel">
+      <div class="sectionTitle"><strong>肺结节分析</strong></div>
+      <label class="analysisModel" for="analysisModel">分析模型<select id="analysisModel" disabled></select></label>
+      <p id="runStatus" role="status" hidden></p>
+      <div class="analysisActions">
+        <button id="startRun" type="button" disabled>重新分析</button><button id="manualDraft" type="button" disabled>切换到人工复核</button>
+      </div>
+    </section>
+    <section id="reviewPanel" aria-label="结节复核" hidden>
+      <div class="reviewListHeading">
+        <div class="sectionTitle"><strong>结节复核</strong><span id="count">0 项</span></div>
+        <div class="findingNavigation">
+          <select id="findingFilter" aria-label="筛选结节复核状态"><option value="">全部观察</option><option value="pending">待复核</option><option value="confirmed">已确认</option><option value="excluded">已排除</option><option value="uncertain">存疑</option></select>
+          <button id="undoReview" type="button" disabled>撤销上一步</button><button id="previousFinding" type="button" disabled>上一项</button><button id="nextFinding" type="button" disabled>下一项</button>
+        </div>
+      </div>
+      <div id="findings"><p>尚无观察记录</p></div>
+      <div id="findingEditor"></div>
+      <div id="completion"></div>
+    </section>
+  </aside>
+</main>
+<dialog id="completeReviewDialog" aria-labelledby="completeReviewTitle">
+  <form id="completeReviewForm">
+    <div class="dialogHeading"><h2 id="completeReviewTitle">完成本例复核</h2></div>
+    <p id="completeReviewSummary"></p>
+    <div id="completeReviewChecks"></div>
+    <p id="completeReviewError" role="alert" hidden></p>
+    <div class="completeReviewActions">
+      <button id="cancelReviewCompletion" type="button">返回复核</button>
+      <button id="commitReviewCompletion" type="submit" class="primary">完成并冻结</button>
+    </div>
+  </form>
+</dialog>
+<section id="exportPanel" hidden></section><nav id="workflowBar" aria-label="检查处理流程"><div class="workflowSteps"><button id="step1" class="workflowStep" data-step="1"><span class="stepNumber">1</span><span>选择检查<small>病例与图像序列</small></span></button><button id="step2" class="workflowStep" data-step="2"><span class="stepNumber">2</span><span>肺结节分析<small>AI 分析 / 人工阅片</small></span></button><button id="step3" class="workflowStep" data-step="3"><span class="stepNumber">3</span><span>复核与测量<small>核对结节并保存</small></span></button><button id="step4" class="workflowStep" data-step="4"><span class="stepNumber">4</span><span>完成与导出<small>冻结记录与研究包</small></span></button></div><div class="workflowAction"><span id="workflowHint" role="status"></span><button id="workflowNext" class="primary">进入分析 →</button></div></nav><footer><span id="status" role="status">准备就绪</span><span>研究数据仅保存在本机</span></footer><script type="module" src="/static/export-ui.js"></script></body></html>

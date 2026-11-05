@@ -26,20 +26,28 @@ def revision(value):
     result=whitelist(value,REVISION_FIELDS)
     for axis in ('long_axis','short_axis'):
         result[axis]=whitelist(value[axis],['endpoints','length_mm','slice_key','method']) if value.get(axis) else None
+    if value.get('contour'):
+        result['contour']=whitelist(value['contour'],['points_lps','slice_key','method'])
     return result
 
 
 def run_export(run):
     if not run:return None
     result=whitelist(run,RUN_FIELDS)
+    if 'model_id' in run:result['model_id']=run['model_id']
     result['model']=None
     if run.get('model'):
         model=run['model']
         result['model']=whitelist(model,['name','version','weight_sha256','preprocessing_sha256','license','execution_profile','software_version','adapter_sha256'])
         if model.get('preprocessing'):
-            result['model']['preprocessing']=whitelist(model['preprocessing'],['bundle_version','orientation','spacing','hu_range','nms','patch','cuda_amp'])
+            preprocessing=model['preprocessing']
+            keys=['bundle_version','orientation','spacing','hu_range','nms','patch','cuda_amp']
+            keys.extend(k for k in ('representation','image_size','slice_confidence_floor','slice_max_detections',
+                                      'cluster_z_margin','cluster_iou','candidate_cap') if k in preprocessing)
+            result['model']['preprocessing']=whitelist(preprocessing,keys)
         if model.get('runtime'):
             result['model']['runtime']=whitelist(model['runtime'],['python','torch','monai','numpy','device','cuda','precision','cuda_peak_allocated_bytes','cuda_peak_reserved_bytes'])
+            if 'ultralytics' in model['runtime']:result['model']['runtime']['ultralytics']=model['runtime']['ultralytics']
     return result
 
 

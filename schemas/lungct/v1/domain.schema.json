@@ -243,6 +243,26 @@
             }
           ]
         },
+        "contour": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "points_lps": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 512,
+              "items": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 3,
+                "items": { "type": "number" }
+              }
+            },
+            "slice_key": { "type": "string" },
+            "method": { "const": "manual_axial_lps" }
+          },
+          "required": ["points_lps", "slice_key", "method"]
+        },
         "missing_reason": {
           "type": [
             "string",
@@ -292,6 +312,10 @@
         },
         "input_sha256": {
           "type": "string"
+        },
+        "model_id": {
+          "type": "string",
+          "minLength": 1
         },
         "model": {
           "type": [

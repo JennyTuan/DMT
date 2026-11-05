@@ -1,0 +1,15 @@
+{
+  "name": "lungct-viewer",
+  "private": true,
+  "scripts": {
+    "build": "esbuild web/cornerstone.js --bundle --minify --format=esm --legal-comments=external --outfile=static/vendor/cornerstone.js"
+  },
+  "dependencies": {
+    "@cornerstonejs/core": "5.15.2",
+    "events": "3.3.0",
+    "url": "0.11.4"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

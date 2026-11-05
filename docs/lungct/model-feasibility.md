@@ -57,6 +57,8 @@ uv pip install --python data/lungct-download-env/Scripts/python.exe idc-index
 
 ## A04 剩余项
 
+2026-11-05 更新：O001 已在聊天中确认全片像素核查及成人非增强胸部筛查来源条件；已据此完成正常应用入库。记录在本地 `human-acceptance-O001.json`、`application-import-O001.json`，项目 `NLST-100206`、病例 `R-001`。以下第 1 项已完成；第 2、3 项仍待用户亲自操作的新应用 Run、位置核对与导出结果。
+
 1. 实际授权检查者完成像素检查和本例成人胸部/非增强来源确认，记录代号、时间、依据。
 2. 人工核对至少一个真实候选的源片位置，登记采用的 qualification/run、候选与参考对象。
 3. 获准入库后跑应用 Run 至人工复核、快照、导出，保存真实工作站证据。

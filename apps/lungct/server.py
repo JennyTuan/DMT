@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 import secrets
 from urllib.parse import urlsplit
-from flask import Flask, jsonify, request, send_file, send_from_directory
+from flask import Flask, Response, jsonify, request, send_file, send_from_directory
 from .core import owned
 from .service import Service
 from .viewer import coronal, image_png, locate
@@ -48,7 +48,10 @@ def create_app(service, *, enabled=False):
     def index(): return send_from_directory(app.static_folder,'index.html')
 
     @app.get('/api/session')
-    def session(): return jsonify(token=token,notice='仅供科研，不用于临床诊断',model_configured=service.model is not None)
+    def session():
+        models=[adapter.selection for adapter in service.detection_models().values()]
+        return jsonify(token=token,notice='仅供科研，不用于临床诊断',analysis_models=models,
+                       model_configured=bool(models) or (service.model is not None and getattr(service.model,'selection',None) is None))
 
     @app.get('/api/state')
     def state(): return jsonify(service.state(request.args.get('project')))
@@ -76,6 +79,8 @@ def create_app(service, *, enabled=False):
             index=int(request.args.get('index',0))
             if not 0<=index<len(volume):raise ValueError('切片索引超出范围')
             array=volume[index]
+        if request.args.get('format')=='hu':
+            return Response(array.astype('<f4',copy=False).tobytes(),mimetype='application/octet-stream')
         return send_file(image_png(array,center,width),mimetype='image/png')
 
     @app.get('/api/locator')
@@ -83,6 +88,10 @@ def create_app(service, *, enabled=False):
         volume,g=service.volume(request.args['project'],request.args['series'])
         _,meta=coronal(volume,g,float(request.args['y']) if 'y' in request.args else None)
         return jsonify(meta)
+
+    @app.get('/api/series-info')
+    def series_info():
+        return jsonify(service.series_info(request.args['project'],request.args['series']))
 
     @app.post('/api/locate')
     def location():
@@ -101,11 +110,22 @@ def main():
     parser.add_argument('--port',type=int,default=8766)
     parser.add_argument('--model-bundle',type=Path)
     parser.add_argument('--model-profile',choices=['standard','low-memory'],default='standard')
+    parser.add_argument('--luna25d-bundle',type=Path,help='启用本机 LUNA16 2.5D 科研检测模型')
+    parser.add_argument('--demo-directory',type=Path,help='启动时将本地合成体模加入演示病例列表')
     args=parser.parse_args()
     # No request logging: URLs and imported local paths never reach a log sink.
     logging.getLogger('werkzeug').disabled=True
     from .model import MonaiAdapter
-    service=Service(args.data_dir,allowed_roots=args.allow_root,model=MonaiAdapter(args.model_bundle,profile=args.model_profile) if args.model_bundle else None)
+    extra_models=[]
+    if args.luna25d_bundle:
+        from .luna25d import Luna25DAdapter
+        extra_models.append(Luna25DAdapter(args.luna25d_bundle))
+    service=Service(args.data_dir,allowed_roots=args.allow_root,model=MonaiAdapter(args.model_bundle,profile=args.model_profile) if args.model_bundle else None,models=extra_models)
+    if args.demo_directory:
+        demo=next((p for p in service.state()['projects'] if p['name']=='LUNG-DEMO' and p['operator']=='DEMO-READER'),None)
+        if demo is None: demo=service.create_project('LUNG-DEMO','DEMO-READER')
+        if not service.state(demo['project_id'])['studies']:
+            service.import_study(demo['project_id'],str(args.demo_directory),dict(source_code='SYNTHETIC',research_source='unknown',authorized=True,deidentified=True,pixels_checked=True,adult_chest=True,noncontrast=True))
     create_app(service,enabled=args.enable_lungct).run(host='127.0.0.1',port=args.port,debug=False,use_reloader=False)
 
 

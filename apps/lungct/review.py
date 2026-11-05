@@ -5,7 +5,8 @@ from .core import code, uid, now, owned, digest
 from .geometry import from_dict, patient_to_pixel
 
 REASONS={'false_positive','duplicate','artifact','insufficient_evidence','withdrawn','correction','not_measured','not_visible','unreliable_boundary','location_changed'}
-FIELDS={'state','reason','center_lps','slice_key','side','lobe','nodule_type','long_axis','short_axis','missing_reason'}
+ANNOTATIONS={'long_axis','short_axis','contour'}
+FIELDS={'state','reason','center_lps','slice_key','side','lobe','nodule_type','missing_reason'}|ANNOTATIONS
 
 
 def current(state,draft):
@@ -36,7 +37,7 @@ def append_revision(state,draft,fid,previous,values,operator,action):
     return deepcopy(record)
 
 
-def create_finding(state,draft,point,operator,source='manual',run_id=None,box=None,score=None):
+def create_finding(state,draft,point,operator,source='manual',run_id=None,box=None,score=None,geometry=None):
     series=state['series'][draft['series_key']];g=from_dict(series['geometry'])
     index,x,y=patient_to_pixel(g,point,require_plane=(source=='manual'))
     source_point=list(g.pixel_to_patient(index,x,y))
@@ -45,8 +46,37 @@ def create_finding(state,draft,point,operator,source='manual',run_id=None,box=No
         source=source,run_id=run_id,center_lps=list(point),slice_key=series['slice_keys'][index],box_lps=box,score=score)
     values=dict(state='pending',reason=None,center_lps=source_point,slice_key=series['slice_keys'][index],
                 side='unknown',lobe='unknown',nodule_type='unknown',long_axis=None,short_axis=None,missing_reason=None)
+    if geometry is not None:
+        if not isinstance(geometry,dict) or not geometry or set(geometry)-ANNOTATIONS:
+            raise ValueError('新增标注字段无效')
+        values.update(deepcopy(geometry))
+        validate_revision(values,series)
     append_revision(state,draft,fid,None,values,operator,'add')
     return next(f for f in current(state,draft) if f['finding_id']==fid)
+
+
+def normalize_contour(value,g,index,slice_key):
+    vertices=np.asarray(value.get('points_lps') if isinstance(value,dict) else value,dtype=float)
+    if vertices.ndim!=2 or vertices.shape[1]!=3 or not 3<=len(vertices)<=512 or not np.isfinite(vertices).all():
+        raise ValueError('轮廓需要 3–512 个有限 LPS 顶点')
+    pixels=[]
+    for vertex in vertices:
+        layer,x,y=patient_to_pixel(g,vertex,require_plane=True)
+        if layer!=index:raise ValueError('轮廓必须位于同一原始切片')
+        pixels.append([x,y])
+    a=np.asarray(pixels);b=np.roll(a,-1,axis=0)
+    if len(np.unique(a.round(8),axis=0))!=len(a):raise ValueError('轮廓有重复顶点')
+    def cross(u,v):
+        return u[...,0]*v[...,1]-u[...,1]*v[...,0]
+    i,j=np.triu_indices(len(a),k=2)
+    keep=(i!=0)|(j!=len(a)-1)
+    i,j=i[keep],j[keep]
+    ab=b[i]-a[i];cd=b[j]-a[j]
+    same_box=np.all(np.maximum(np.minimum(a[i],b[i]),np.minimum(a[j],b[j]))<=np.minimum(np.maximum(a[i],b[i]),np.maximum(a[j],b[j]))+1e-9,axis=1)
+    intersects=same_box&(cross(ab,a[j]-a[i])*cross(ab,b[j]-a[i])<=1e-12)&(cross(cd,a[i]-a[j])*cross(cd,b[i]-a[j])<=1e-12)
+    if np.any(intersects) or abs(cross(a-a[0],b-a[0]).sum())<1e-6:
+        raise ValueError('轮廓必须围成无交叉的区域')
+    return dict(points_lps=vertices.tolist(),slice_key=slice_key,method='manual_axial_lps')
 
 
 def validate_revision(revision,series):
@@ -60,6 +90,8 @@ def validate_revision(revision,series):
     if revision['state'] in ('excluded','uncertain') and not revision['reason']:raise ValueError('排除或存疑必须选择原因')
     g=from_dict(series['geometry']);index,_,_=patient_to_pixel(g,revision['center_lps'],require_plane=True)
     if revision['slice_key']!=series['slice_keys'][index]:raise ValueError('中心点与源切片引用不一致')
+    if revision.get('contour') is not None:
+        revision['contour']=normalize_contour(revision['contour'],g,index,revision['slice_key'])
     for axis in ('long_axis','short_axis'):
         value=revision[axis]
         if value is None:continue
@@ -111,10 +143,10 @@ class ReviewService:
         state=self.repo.read();item=owned(state,'drafts',draft,project)
         return {**item,'findings':current(state,item),'counts':counts(current(state,item))}
 
-    def add_finding(self,project,draft,point,operator):
+    def add_finding(self,project,draft,point,operator,geometry=None):
         with self.repo.transaction() as state:
             item=editable(state,project,draft)
-            return create_finding(state,item,point,operator)
+            return create_finding(state,item,point,operator,geometry=geometry)
 
     def revise_finding(self,project,draft,finding,expected_revision_id,patch,operator):
         with self.repo.transaction() as state:
@@ -122,11 +154,14 @@ class ReviewService:
             if finding not in item['heads']:raise ValueError('观察不属于当前草稿')
             if item['heads'][finding]!=expected_revision_id:raise ValueError('修订已过期，请刷新后重试')
             if not isinstance(patch,dict) or not patch or set(patch)-FIELDS:raise ValueError('修订字段不在白名单中')
-            values={k:deepcopy(state['revisions'][expected_revision_id][k]) for k in FIELDS}
+            previous=state['revisions'][expected_revision_id]
+            values={k:deepcopy(previous[k]) for k in FIELDS if k in previous}
             if 'long_axis' in patch and 'short_axis' not in patch:
                 values.update(short_axis=None,missing_reason='not_measured')
             if ('center_lps' in patch and patch['center_lps']!=values['center_lps']) or ('slice_key' in patch and patch['slice_key']!=values['slice_key']):
                 values.update(long_axis=None,short_axis=None,missing_reason='location_changed')
+            if 'slice_key' in patch and patch['slice_key']!=values['slice_key'] and 'contour' in values:
+                values['contour']=None
             values.update(deepcopy(patch))
             validate_revision(values,state['series'][item['series_key']])
             append_revision(state,item,finding,expected_revision_id,values,operator,'revise')
@@ -138,7 +173,7 @@ class ReviewService:
             if item['heads'].get(finding)!=expected_revision_id:raise ValueError('修订已过期，请刷新')
             previous=state['revisions'][expected_revision_id]['previous_revision_id']
             if previous is None:raise ValueError('初始观察无法物理删除；可选择排除/撤回')
-            values={k:deepcopy(state['revisions'][previous][k]) for k in FIELDS}
+            values={k:deepcopy(state['revisions'][previous][k]) for k in FIELDS if k in state['revisions'][previous]}
             append_revision(state,item,finding,expected_revision_id,values,operator,'undo')
             return next(f for f in current(state,item) if f['finding_id']==finding)
 

@@ -97,6 +97,33 @@ class ReviewTests(unittest.TestCase):
         history=self.service.finding_history(self.project,self.did,f['finding_id'])
         self.assertEqual(history[1]['short_axis']['length_mm'],6)
 
+    def test_contour_creation_edit_undo_and_export(self):
+        import json
+        outline=[[-9,-6,6],[-3,-6,6],[-3,0,6],[-9,0,6]]
+        create=lambda vertices:self.service.add_finding(self.project,self.did,[-6,-3,6],'OP',geometry={'contour':vertices})
+        for invalid in [outline[:2], [outline[i] for i in (0,2,1,3)], [*outline[:3],[-9,0,7.5]]]:
+            with self.assertRaises(ValueError):create(invalid)
+        self.assertEqual(self.service.get_draft(self.project,self.did)['findings'],[])
+        finding=create(outline)
+        self.assertEqual(finding['revision']['contour']['points_lps'],outline)
+        new_outline=[*outline[:3],[-10,0,6]]
+        edited=self.revise(finding,{'contour':new_outline})
+        self.assertEqual(edited['finding_id'],finding['finding_id'])
+        self.assertEqual(edited['original'],finding['original'])
+        with self.assertRaisesRegex(ValueError,'过期'):self.revise(finding,{'contour':outline})
+        restored=self.service.undo_finding(self.project,self.did,edited['finding_id'],edited['revision']['revision_id'],'OP')
+        self.assertEqual(restored['revision']['contour']['points_lps'],outline)
+        self.revise(restored,{'state':'confirmed','missing_reason':'not_measured'})
+        snap=self.complete()
+        package=self.service.export_snapshots(self.project,[snap['snapshot_id']])
+        data=json.loads((Path(package['output_directory'])/'review.json').read_text(encoding='utf-8'))
+        observation=data['snapshots'][0]['observations'][0]['adopted_revision']
+        self.assertEqual(observation['contour']['points_lps'],outline)
+        reopened=self.service.reopen_case(self.project,snap['snapshot_id'],'OP');self.did=reopened['draft_id']
+        moved=self.revise(reopened['findings'][0],{'center_lps':[-6,-3,7.5],'slice_key':self.series['slice_keys'][5]})
+        self.assertIsNone(moved['revision']['contour'])
+        self.assertEqual(self.service.repo.read()['snapshots'][snap['snapshot_id']],snap)
+
     def test_latest_reopened_draft_is_selected_by_time_not_uuid(self):
         from unittest.mock import patch
         with patch('apps.lungct.review.uid',return_value='snapshot_test'):

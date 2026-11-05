@@ -1,8 +1,10 @@
 /.venv/
 /.venv-lungct-model/
 /data/
+/output/ui-references/
 *.[dD][cC][mM]
 __pycache__/
 *.py[cod]
 node_modules/
 apps/petfollow-lymphoma/web/client/dist/
+apps/lungct/static/vendor/

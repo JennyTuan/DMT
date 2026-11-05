@@ -12,12 +12,16 @@ from .review import create_finding
 
 POOL=ThreadPoolExecutor(max_workers=1,thread_name_prefix='lungct-local')
 PREPROCESS=dict(bundle_version='0.6.9',orientation='RAS',spacing=[.703125,.703125,1.25],hu_range=[-1024,300],nms=.22,patch=[512,512,192],cuda_amp=True)
+DETECTION_TASK='nodule-detection'
+MONAI_NAME='MONAI/lung_nodule_ct_detection'
 
 
 class MonaiAdapter:
     def __init__(self,bundle,*,profile='standard'):
         if profile not in ('standard','low-memory'):raise ValueError('未知模型内存配置')
         self.bundle=Path(bundle).resolve();self.profile=profile
+        self.selection=dict(id=f'monai-retinanet-0.6.9-{profile}', label='MONAI RetinaNet',
+                            name=MONAI_NAME, version='0.6.9', task=DETECTION_TASK, profile=profile)
         self.preprocessing=deepcopy(PREPROCESS)
         if profile=='low-memory':self.preprocessing['patch']=[256,256,96]
 
@@ -28,7 +32,7 @@ class MonaiAdapter:
         except (OSError,ValueError):raise ValueError('MODEL_VERSION') from None
         if metadata.get('version')!='0.6.9':raise ValueError('MODEL_VERSION')
         from . import VERSION
-        return dict(name='MONAI/lung_nodule_ct_detection',version='0.6.9',weight_sha256=hashlib.sha256(weights.read_bytes()).hexdigest(),preprocessing_sha256=digest(self.preprocessing),preprocessing=deepcopy(self.preprocessing),execution_profile=self.profile,license='Apache-2.0',software_version=VERSION,adapter_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
+        return dict(name=MONAI_NAME,version='0.6.9',weight_sha256=hashlib.sha256(weights.read_bytes()).hexdigest(),preprocessing_sha256=digest(self.preprocessing),preprocessing=deepcopy(self.preprocessing),execution_profile=self.profile,license='Apache-2.0',software_version=VERSION,adapter_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
 
     def predict(self,volume,geometry,threshold):
         # Requires a separate compatible environment; imports cannot affect manual mode.
@@ -82,22 +86,43 @@ class MonaiAdapter:
 
 
 class ModelService:
-    def start_run(self,project,series,request_key,threshold=.02):
+    def detection_models(self):
+        models={}
+        for adapter in (self.model,*self.models):
+            option=getattr(adapter,'selection',None)
+            if option is None or option['task']!=DETECTION_TASK:continue
+            model_id=option['id']
+            if model_id in models:raise ValueError('检测模型标识重复')
+            models[model_id]=adapter
+        return models
+
+    def start_run(self,project,series,request_key,threshold=.02,model_id=None):
         from .core import code
         code(request_key)
+        if model_id is not None and not isinstance(model_id,str):raise ValueError('检测模型标识无效')
         if not isinstance(threshold,(int,float)) or not np.isfinite(threshold) or not 0<=threshold<=1:raise ValueError('模型阈值无效')
         with self.repo.transaction() as state:
             selected=owned(state,'series',series,project)
             if not selected['eligible'] or state['studies'][selected['study_key']]['selected_series']!=series:raise ValueError('请先选择合格分析序列')
             for run in state['runs'].values():
                 if run['project_id']==project and run['series_key']==series and run['request_key']==request_key:
-                    if run['threshold']!=threshold:raise ValueError('同一请求键不能更换参数')
+                    if run['threshold']!=threshold or (model_id is not None and model_id!=run.get('model_id')):
+                        raise ValueError('同一请求键不能更换参数')
                     return deepcopy(run)
+            models=self.detection_models()
+            if model_id is not None:
+                if model_id not in models:raise ValueError('所选检测模型未配置')
+                adapter=models[model_id]
+            elif models:
+                model_id,adapter=next(iter(models.items()))
+            else:
+                adapter=self.model if getattr(self.model,'selection',None) is None else None
             run=dict(run_id=uid('run'),project_id=project,series_key=series,request_key=request_key,threshold=threshold,
                 state='queued',complete=False,created_at=now(),input_sha256=selected['input_sha256'],
                 model=None,error_code=None,candidate_count=None,finding_ids=[],initial_revisions={},elapsed_seconds=None,message='排队中')
+            if model_id is not None:run['model_id']=model_id
             state['runs'][run['run_id']]=run
-        POOL.submit(self._execute_run,project,run['run_id'],self.model)
+        POOL.submit(self._execute_run,project,run['run_id'],adapter)
         return run
 
     def get_run(self,project,run_id):return deepcopy(owned(self.repo.read(),'runs',run_id,project))
@@ -117,8 +142,11 @@ class ModelService:
             if not isinstance(result['candidates'],list):raise ValueError('INVALID_RESULTS')
             for candidate in result['candidates']:
                 patient_to_pixel(g,candidate['center_lps'])
-                box=np.asarray(candidate['box_lps'],dtype=float);score=candidate['score']
-                if box.shape!=(6,) or not np.isfinite(box).all() or np.any(box[3:]<=box[:3]) or not np.isfinite(score) or not 0<=score<=1:raise ValueError('INVALID_RESULTS')
+                score=candidate['score']
+                if not np.isfinite(score) or not 0<=score<=1:raise ValueError('INVALID_RESULTS')
+                if candidate['box_lps'] is None:continue
+                box=np.asarray(candidate['box_lps'],dtype=float)
+                if box.shape!=(6,) or not np.isfinite(box).all() or np.any(box[3:]<=box[:3]):raise ValueError('INVALID_RESULTS')
                 center=np.asarray(candidate['center_lps'])
                 if np.any(center<box[:3]) or np.any(center>box[3:]):raise ValueError('INVALID_RESULTS')
             with self.repo.transaction() as state:
@@ -139,7 +167,7 @@ class ModelService:
             elif str(error) in ('MODEL_NOT_CONFIGURED','WEIGHTS_MISSING','MODEL_VERSION','MODEL_DEPENDENCIES'):code_value=str(error)
             else:code_value='INVALID_RESULTS' if isinstance(error,(ValueError,KeyError,TypeError)) else 'INFERENCE_FAILED'
             text={'MODEL_NOT_CONFIGURED':'未配置检测模型，可继续人工标注','WEIGHTS_MISSING':'检测模型权重缺失，请在本机配置获准权重',
-                  'MODEL_DEPENDENCIES':'模型依赖不匹配，请使用登记的模型运行环境','MODEL_VERSION':'模型版本不匹配，请核对 0.6.9 配置',
+                  'MODEL_DEPENDENCIES':'模型依赖不匹配，请使用登记的模型运行环境','MODEL_VERSION':'模型文件与登记版本不匹配',
                   'OUT_OF_MEMORY':'分析失败，未生成可用结果：内存或显存不足'}
             with self.repo.transaction() as state:
                 state['runs'][rid].update(state='failed',complete=False,error_code=code_value,candidate_count=None,finding_ids=[],initial_revisions={},
